@@ -65,7 +65,6 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
     <?php endforeach; ?>
   </div>
   <div class="hero-over text-center">
-    <span class="hero-eyebrow">Conchalí · Santiago</span>
     <img src="/<?= e($JUNTA['logo']) ?>" alt="Logo" class="hero-logo" width="150" height="150">
     <h1><?= e($JUNTA['nombre']) ?></h1>
     <p><?= e($JUNTA['lema']) ?></p>
