@@ -25,6 +25,10 @@ $JUNTA = [
   'whatsapp'  => '56974075381',                              // <-- EDITAR: solo números con 56, sin + (agendamiento)
   'email'     => 'brisasdelnorteuv8@gmail.com',
   'logo'      => 'assets/img/logo.png',                      // <-- reemplaza el archivo por tu logo (PNG)
+  'redes'     => [
+    'facebook'  => 'https://www.facebook.com/brisasdelnorte.juntadevecinos',
+    'instagram' => 'https://www.instagram.com/brisasdelnorte.jv8/',
+  ],
 ];
 
 // ---- Carrusel de Inicio: archivos dentro de la carpeta /inicio --------

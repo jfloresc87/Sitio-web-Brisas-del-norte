@@ -13,8 +13,12 @@ syncThemeControl();
 themeToggle?.addEventListener('click', () => {
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = next;
-  localStorage.setItem('brisas-theme', next);
   syncThemeControl();
+  try {
+    localStorage.setItem('brisas-theme', next);
+  } catch (error) {
+    console.warn('No se pudo guardar la preferencia de tema.', error);
+  }
 });
 
 /* ---- Navegación y revelado al hacer scroll ---- */

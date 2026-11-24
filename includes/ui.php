@@ -2,7 +2,7 @@
 /* Plantilla mínima para páginas de acceso (login, recuperar, cambiar clave) */
 function auth_head(string $title): void { global $JUNTA; ?><!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title><?= e($title) ?></title>
-<script>(()=>{const t=localStorage.getItem('brisas-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t})();</script>
+<script>(()=>{let t='light';try{const s=localStorage.getItem('brisas-theme');if(s==='light'||s==='dark')t=s}catch(e){console.warn('No se pudo leer la preferencia de tema guardada.',e)}document.documentElement.dataset.theme=t})();</script>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
