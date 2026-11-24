@@ -6,8 +6,12 @@ $fl = flash(); $pdo = db();
 $nav = fn($k, $label, $extra = '') => '<a class="nav-link'.($s === $k && !$extra ? ' active' : '').'" href="?s='.$k.'">'.$label.'</a>';
 ?><!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
 <title>Panel – <?= e($JUNTA['nombre']) ?></title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"><link href="/assets/css/style.css" rel="stylesheet">
-<style>.side{background:var(--sea);min-height:100vh}.side .nav-link{color:#cfe0e6;border-radius:.4rem}.side .nav-link.active,.side .nav-link:hover{background:rgba(255,255,255,.14);color:#fff}
+<script>(()=>{let t='light';try{const s=localStorage.getItem('brisas-theme');if(s==='light'||s==='dark')t=s}catch(e){console.warn('No se pudo leer la preferencia de tema guardada.',e)}document.documentElement.dataset.theme=t})();</script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="/assets/css/style.css?v=<?= filemtime(__DIR__.'/../assets/css/style.css') ?>" rel="stylesheet">
+<style>.side{background:var(--sea-d);min-height:100vh}.side .nav-link{color:rgba(255,255,255,.82);border-radius:.65rem}.side .nav-link.active,.side .nav-link:hover{background:rgba(255,255,255,.14);color:#fff}
 .side .sub .nav-link{padding-left:2rem;font-size:.92rem}.thumb-sm{width:90px;height:60px;object-fit:cover;border-radius:.3rem}.gimg{position:relative;display:inline-block}.gimg img{width:100px;height:70px;object-fit:cover;border-radius:.3rem}</style>
 </head><body class="bg-light">
 <div class="container-fluid"><div class="row">
