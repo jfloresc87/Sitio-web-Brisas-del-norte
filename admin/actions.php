@@ -3,7 +3,7 @@
 require __DIR__.'/../includes/bootstrap.php'; require_login();
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !csrf_ok()) { http_response_code(400); exit('Solicitud inválida.'); }
 $a = $_POST['action'] ?? ''; $pdo = db(); $back = '/admin/index.php?s=';
-$pendingUpload = null;
+$pendingUpload = null; $pendingUploads = [];
 try {
   switch ($a) {
   case 'news_save':
@@ -59,29 +59,19 @@ try {
     $back = '/admin/index.php?s=inicio';
     $slides = hero_slides();
     $remove = array_map('intval', array_filter((array)($_POST['remove_slide'] ?? []), 'is_scalar'));
-    $descriptions = is_array($_POST['descriptions'] ?? null) ? $_POST['descriptions'] : [];
     $updated = []; $removedFiles = [];
     foreach ($slides as $index=>$slide) {
       if (in_array($index, $remove, true)) {
         if (str_starts_with($slide['image'], 'uploads/hero/')) $removedFiles[] = $slide['image'];
         continue;
       }
-      $description = $descriptions[$index] ?? $slide['description'];
-      if (!is_string($description)) throw new Exception('Una descripción del carrusel no es válida.');
-      $updated[] = [
-        'image'=>$slide['image'],
-        'description'=>clean($description, 240),
-      ];
+      $updated[] = ['image'=>$slide['image']];
     }
     $heroFile = $_FILES['hero_image'] ?? null;
     if ($heroFile && $heroFile['error'] !== UPLOAD_ERR_NO_FILE) {
-      if (count($updated) >= 10) throw new Exception('El carrusel puede tener un máximo de 10 imágenes.');
-      $description = $_POST['new_description'] ?? '';
-      if (!is_string($description)) throw new Exception('La descripción de la nueva foto no es válida.');
-      $description = clean($description, 240);
-      if ($description === '') throw new Exception('Escribe una descripción para la nueva foto.');
+      if (count($updated) >= 6) throw new Exception('El carrusel puede tener un máximo de 6 imágenes.');
       $pendingUpload = save_upload($heroFile, 'hero', ['image'], 8);
-      $updated[] = ['image'=>$pendingUpload, 'description'=>$description];
+      $updated[] = ['image'=>$pendingUpload];
     }
     save_hero_slides($updated);
     $pendingUpload = null;
@@ -89,6 +79,32 @@ try {
       if (!in_array($removedFile, array_column($updated, 'image'), true)) del_file($removedFile);
     }
     flash('Carrusel de Inicio actualizado.'); break;
+
+  case 'directiva_save':
+    $back = '/admin/index.php?s=directiva';
+    $members = directiva_members();
+    $bios = $_POST['bio'] ?? [];
+    if (!is_array($bios)) throw new Exception('Las descripciones de la directiva no son válidas.');
+    $updated = []; $removedPhotos = [];
+    foreach ($members as $index=>$member) {
+      $bio = $bios[$index] ?? $member['bio'];
+      if (!is_string($bio)) throw new Exception('Una descripción de la directiva no es válida.');
+      $member['bio'] = clean($bio, 1200);
+      $photo = $_FILES['photo_'.$index] ?? null;
+      if ($photo && ($photo['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+        $newPhoto = save_upload($photo, 'directiva', ['image'], 8);
+        $pendingUploads[] = $newPhoto;
+        if (str_starts_with($member['foto'], 'uploads/directiva/')) $removedPhotos[] = $member['foto'];
+        $member['foto'] = $newPhoto;
+      }
+      $updated[] = $member;
+    }
+    save_directiva_members($updated);
+    $pendingUploads = [];
+    foreach ($removedPhotos as $removedPhoto) {
+      if (!in_array($removedPhoto, array_column($updated, 'foto'), true)) del_file($removedPhoto);
+    }
+    flash('Directiva actualizada.'); break;
 
   case 'admin_save':
     if (!current_user_is_superuser()) { http_response_code(403); exit('Acceso denegado.'); }
@@ -154,8 +170,10 @@ try {
   }
 } catch (Throwable $x) {
   del_file($pendingUpload);
+  foreach ($pendingUploads as $pending) del_file($pending);
   flash($x->getMessage(), 'danger');
   if ($a === 'hero_save') $back = '/admin/index.php?s=inicio';
+  elseif ($a === 'directiva_save') $back = '/admin/index.php?s=directiva';
   elseif (str_starts_with($a, 'admin_')) $back = '/admin/index.php?s=administradores';
   else $back .= str_starts_with($a, 'svc') ? 'servicios' : 'noticias';
 }

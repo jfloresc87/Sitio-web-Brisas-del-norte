@@ -96,7 +96,7 @@ function hero_slides(): array {
   if (!is_file($manifest)) {
     global $CARRUSEL;
     return array_values(array_map(
-      static fn($image) => ['image'=>'inicio/'.$image, 'description'=>''],
+      static fn($image) => ['image'=>'inicio/'.$image],
       array_filter($CARRUSEL, static fn($image) => is_file(ROOT.'/inicio/'.$image))
     ));
   }
@@ -104,26 +104,27 @@ function hero_slides(): array {
   if ($contents === false) throw new RuntimeException('No se pudo leer la configuración del carrusel de Inicio.');
   $slides = json_decode($contents, true);
   if (!is_array($slides) || json_last_error() !== JSON_ERROR_NONE) throw new RuntimeException('La configuración del carrusel de Inicio no es válida.');
+  $validSlides = [];
   foreach ($slides as $slide) {
     if (!is_array($slide)) throw new RuntimeException('Una entrada del carrusel de Inicio no es válida.');
     $image = $slide['image'] ?? '';
     if (!is_string($image) || (!str_starts_with($image, 'uploads/hero/') && !str_starts_with($image, 'inicio/'))
-        || str_contains($image, '..') || !is_file(ROOT.'/'.$image)
-        || !is_string($slide['description'] ?? null)) {
-      throw new RuntimeException('Una imagen o descripción del carrusel de Inicio no es válida.');
+        || str_contains($image, '..') || !is_file(ROOT.'/'.$image)) {
+      throw new RuntimeException('Una imagen del carrusel de Inicio no es válida.');
     }
+    $validSlides[] = ['image'=>$image];
   }
-  return array_values($slides);
+  return array_values($validSlides);
 }
 function save_hero_slides(array $slides): void {
-  if (count($slides) > 10) throw new RuntimeException('El carrusel puede tener un máximo de 10 imágenes.');
+  if (count($slides) > 6) throw new RuntimeException('El carrusel puede tener un máximo de 6 imágenes.');
   foreach ($slides as &$slide) {
     $image = $slide['image'] ?? '';
     if (!is_string($image) || (!str_starts_with($image, 'uploads/hero/') && !str_starts_with($image, 'inicio/'))
         || str_contains($image, '..') || !is_file(ROOT.'/'.$image)) {
       throw new RuntimeException('Una imagen del carrusel no es válida.');
     }
-    $slide = ['image'=>$image, 'description'=>clean((string)($slide['description'] ?? ''), 240)];
+    $slide = ['image'=>$image];
   }
   unset($slide);
   $encoded = json_encode($slides, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
@@ -140,6 +141,62 @@ function save_hero_slides(array $slides): void {
   if (!rename($temporary, $directory.'/hero-slides.json')) {
     @unlink($temporary);
     throw new RuntimeException('No se pudo actualizar la configuración del carrusel.');
+  }
+}
+function directiva_members(): array {
+  $manifest = ROOT.'/uploads/directiva.json';
+  if (!is_file($manifest)) {
+    global $DIRECTIVA;
+    return array_values($DIRECTIVA);
+  }
+  $contents = file_get_contents($manifest);
+  if ($contents === false) throw new RuntimeException('No se pudo leer la configuración de la directiva.');
+  $members = json_decode($contents, true);
+  if (!is_array($members) || json_last_error() !== JSON_ERROR_NONE) throw new RuntimeException('La configuración de la directiva no es válida.');
+  $validMembers = [];
+  foreach ($members as $member) {
+    if (!is_array($member)) throw new RuntimeException('Un perfil de la directiva no es válido.');
+    $cargo = $member['cargo'] ?? null;
+    $nombre = $member['nombre'] ?? null;
+    $foto = $member['foto'] ?? null;
+    $bio = $member['bio'] ?? null;
+    if (!is_string($cargo) || !is_string($nombre) || !is_string($foto) || !is_string($bio)
+        || (!str_starts_with($foto, 'uploads/directiva/') && !str_starts_with($foto, 'directiva/'))
+        || str_contains($foto, '..') || !is_file(ROOT.'/'.$foto)) {
+      throw new RuntimeException('Una foto o descripción de la directiva no es válida.');
+    }
+    $validMembers[] = ['cargo'=>$cargo, 'nombre'=>$nombre, 'foto'=>$foto, 'bio'=>$bio];
+  }
+  return array_values($validMembers);
+}
+function save_directiva_members(array $members): void {
+  foreach ($members as &$member) {
+    $cargo = $member['cargo'] ?? '';
+    $nombre = $member['nombre'] ?? '';
+    $foto = $member['foto'] ?? '';
+    $bio = $member['bio'] ?? '';
+    if (!is_string($cargo) || !is_string($nombre) || !is_string($foto) || !is_string($bio)
+        || (!str_starts_with($foto, 'uploads/directiva/') && !str_starts_with($foto, 'directiva/'))
+        || str_contains($foto, '..') || !is_file(ROOT.'/'.$foto)) {
+      throw new RuntimeException('Una foto o descripción de la directiva no es válida.');
+    }
+    $member = ['cargo'=>$cargo, 'nombre'=>$nombre, 'foto'=>$foto, 'bio'=>clean($bio, 1200)];
+  }
+  unset($member);
+  $encoded = json_encode($members, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+  if ($encoded === false) throw new RuntimeException('No se pudo codificar la configuración de la directiva.');
+  $directory = ROOT.'/uploads';
+  if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
+    throw new RuntimeException('No se pudo crear el directorio de carga.');
+  }
+  $temporary = $directory.'/.directiva-'.bin2hex(random_bytes(8)).'.tmp';
+  if (file_put_contents($temporary, $encoded, LOCK_EX) === false) {
+    @unlink($temporary);
+    throw new RuntimeException('No se pudo guardar la configuración de la directiva.');
+  }
+  if (!rename($temporary, $directory.'/directiva.json')) {
+    @unlink($temporary);
+    throw new RuntimeException('No se pudo actualizar la configuración de la directiva.');
   }
 }
 /* Reordena $_FILES['campo'][] múltiples */

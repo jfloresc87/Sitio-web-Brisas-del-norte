@@ -51,12 +51,10 @@ if ('IntersectionObserver' in window) {
 const sl = $$('.slide');
 if (sl.length > 1) {
   let i = 0;
-  const heroActivity = $('#heroActivity');
   setInterval(() => {
     sl[i].classList.remove('active');
     i = (i + 1) % sl.length;
     sl[i].classList.add('active');
-    if (heroActivity) heroActivity.textContent = sl[i].dataset.description || 'Conoce las actividades y novedades de nuestra comunidad.';
   }, 6000);
 }
 

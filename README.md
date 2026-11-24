@@ -5,6 +5,7 @@ Sitio público y panel de administración para la junta de vecinos.
 ## Funcionalidades
 
 - Información comunitaria, directiva, noticias y servicios.
+- Edición de fotos y biografías de la directiva desde el panel.
 - Carrusel de actividades administrable desde el panel.
 - Formulario de contacto protegido con reCAPTCHA.
 - Gestión de contenidos y cuentas administrativas.
@@ -24,7 +25,7 @@ Sitio público y panel de administración para la junta de vecinos.
 - `includes/`: lógica compartida y configuración del servidor.
 - `assets/`: estilos, scripts e imágenes del sitio.
 - `inicio/` y `directiva/`: imágenes iniciales del sitio.
-- `uploads/`: archivos que se agregan desde el panel.
+- `uploads/`: fotos y otros archivos que se agregan desde el panel.
 
 ## Puesta en marcha
 

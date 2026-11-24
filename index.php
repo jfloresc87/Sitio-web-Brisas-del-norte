@@ -6,7 +6,8 @@ try {
   $news = db()->query("SELECT * FROM news ORDER BY created_at DESC LIMIT 60")->fetchAll();
   $services = db()->query("SELECT * FROM services ORDER BY sort_order, id")->fetchAll();
 } catch (Throwable $x) { $dbError = true; }
-$heroSlides = hero_slides();
+$heroSlides = array_slice(hero_slides(), 0, 6);
+$directivaMembers = directiva_members();
 $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
 ?><!doctype html>
 <html lang="es"><head>
@@ -60,7 +61,7 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
 <header id="inicio" class="hero">
   <div class="slides" aria-hidden="true">
     <?php foreach ($heroSlides as $i => $heroSlide): ?>
-      <div class="slide<?= $i===0?' active':'' ?>" data-description="<?= e($heroSlide['description']) ?>" style="background-image:url('/<?= e(str_replace('%2F', '/', rawurlencode($heroSlide['image']))) ?>')"></div>
+      <div class="slide<?= $i===0?' active':'' ?>" style="background-image:url('/<?= e(str_replace('%2F', '/', rawurlencode($heroSlide['image']))) ?>')"></div>
     <?php endforeach; ?>
   </div>
   <div class="hero-over text-center">
@@ -68,7 +69,12 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
     <img src="/<?= e($JUNTA['logo']) ?>" alt="Logo" class="hero-logo" width="150" height="150">
     <h1><?= e($JUNTA['nombre']) ?></h1>
     <p><?= e($JUNTA['lema']) ?></p>
-    <p class="hero-activity" id="heroActivity"><?= e(($heroSlides[0]['description'] ?? '') ?: 'Conoce las actividades y novedades de nuestra comunidad.') ?></p>
+    <div class="hero-story">
+      <p>La Junta de Vecinos Brisas del Norte, Unidad Vecinal N° 8, nace del compromiso de vecinos y vecinas que, a lo largo de los años, han trabajado por construir un mejor lugar para vivir, compartiendo sueños, desafíos y la esperanza de un barrio más unido.</p>
+      <p>Hoy, nuestra misión es fortalecer la seguridad, promover la participación ciudadana, recuperar y mejorar nuestros espacios comunitarios, y generar iniciativas que contribuyan al bienestar de todas las familias.</p>
+      <p>Nuestro slogan, <strong>“Unidos hoy, más fuertes mañana”</strong>, nace de la necesidad de volver a ser más comunidad, de reencontrarnos como vecinos, recuperar la confianza y comprender que los grandes cambios comienzan cuando dejamos de caminar solos y empezamos a trabajar juntos.</p>
+      <p>Porque una comunidad más segura, activa y solidaria se construye con la participación de todos y todas.</p>
+    </div>
     <a href="#noticias" class="btn btn-sun btn-lg">Ver últimas noticias</a>
   </div>
   <a class="hero-scroll" href="#directiva" aria-label="Ir a la sección Directiva"><span></span></a>
@@ -78,7 +84,7 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
 <section id="directiva" class="py-5"><div class="container">
   <div class="section-heading reveal"><span>Quiénes somos</span><h2 class="sec-title">Nuestra directiva</h2><p>Vecinos comprometidos con una comunidad más segura, activa y unida.</p></div>
   <div class="row g-4 justify-content-center">
-    <?php foreach ($DIRECTIVA as $d): $src = '/directiva/'.rawurlencode($d['foto']); ?>
+    <?php foreach ($directivaMembers as $d): $src = '/'.str_replace('%2F', '/', rawurlencode($d['foto'])); ?>
     <div class="col-6 col-lg-3 reveal"><div class="person">
       <img src="<?= e($src) ?>" alt="<?= e($d['nombre']) ?>" loading="lazy" data-zoom="<?= e($src) ?>" role="button" tabindex="0">
       <div class="p-3"><small class="text-sun fw-semibold"><?= e($d['cargo']) ?></small>
