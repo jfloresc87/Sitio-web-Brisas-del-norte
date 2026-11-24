@@ -23,6 +23,10 @@ INSTALACION EN cPanel (Junta de Vecinos)
 10) Fotos de servicios: sube las galerías desde Administración > Servicios > Editar; se guardan en
     /uploads/services/. Crea esa carpeta si aún no existe y sube por FTP las fichas con estos nombres:
     condiciones-cancha.jpg, condiciones-sede.jpg y certificados.jpg.
+11) El correo jesus.flores.ci@gmail.com es el superusuario del panel. Esa cuenta debe existir en la tabla
+    users con ese correo exacto. Al iniciar sesión, la tabla se actualiza automáticamente con los campos
+    de nombre y foto de perfil. Desde Administración > Administradores puede gestionar las demás cuentas.
+    Las fotos de perfil (JPG, PNG o WEBP, máximo 5 MB) se guardan en /uploads/profiles/.
 
 NOTAS
 - Los comprobantes se guardan en la BDD ulnlxkwm_comprob (tabla receipts). El N° correlativo es el id autoincremental.

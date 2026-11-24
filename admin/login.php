@@ -12,8 +12,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     else {
       $u = $pdo->prepare("SELECT * FROM users WHERE email=?"); $u->execute([strtolower(trim($_POST['email'] ?? ''))]); $u = $u->fetch();
       if ($u && password_verify($_POST['pass'] ?? '', $u['pass_hash'])) {
+        $userId = (int)$u['id'];
+        ensure_admin_profile_schema();
+        $u = $pdo->prepare("SELECT * FROM users WHERE id=?"); $u->execute([$userId]); $u = $u->fetch();
         session_regenerate_id(true);
-        $_SESSION['uid'] = $u['id']; $_SESSION['email'] = $u['email']; $_SESSION['must_change'] = (int)$u['must_change'];
+        $_SESSION['uid'] = $u['id']; $_SESSION['email'] = $u['email']; $_SESSION['name'] = $u['name'];
+        $_SESSION['profile_photo'] = $u['profile_photo']; $_SESSION['must_change'] = (int)$u['must_change'];
         $pdo->prepare("UPDATE users SET last_login=NOW() WHERE id=?")->execute([$u['id']]);
         $pdo->prepare("DELETE FROM login_attempts WHERE ip=?")->execute([$ip]);
         header('Location: /admin/index.php'.(($_POST['next'] ?? '') === 'comprobantes' ? '?s=comprobantes' : '')); exit;

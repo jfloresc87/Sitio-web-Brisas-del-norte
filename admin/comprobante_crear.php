@@ -1,7 +1,10 @@
 <?php
 /* Valida (en el servidor) y guarda un comprobante; responde JSON con el id */
 require __DIR__.'/../includes/bootstrap.php';
-if (empty($_SESSION['uid']) || !empty($_SESSION['must_change'])) jout(['ok'=>false,'msg'=>'Sesión no válida.'], 401);
+if (empty($_SESSION['uid'])) jout(['ok'=>false,'msg'=>'Sesión no válida.'], 401);
+$activeAdmin = db()->prepare("SELECT must_change FROM users WHERE id=?"); $activeAdmin->execute([$_SESSION['uid']]);
+$mustChange = $activeAdmin->fetchColumn();
+if ($mustChange === false || $mustChange) jout(['ok'=>false,'msg'=>'Sesión no válida.'], 401);
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !csrf_ok()) jout(['ok'=>false,'msg'=>'Solicitud inválida, recarga la página.'], 400);
 function bad(string $m): never { jout(['ok'=>false,'msg'=>$m], 422); }
 

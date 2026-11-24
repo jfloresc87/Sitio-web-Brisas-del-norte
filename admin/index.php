@@ -1,8 +1,15 @@
 <?php
 require __DIR__.'/../includes/bootstrap.php'; require_login();
-$s = $_GET['s'] ?? 'noticias'; if (!in_array($s, ['noticias','servicios','comprobantes'], true)) $s = 'noticias';
+$s = $_GET['s'] ?? 'noticias'; if (!in_array($s, ['noticias','servicios','comprobantes','administradores'], true)) $s = 'noticias';
 $sub = ($_GET['sub'] ?? 'generar') === 'historial' ? 'historial' : 'generar';
-$fl = flash(); $pdo = db();
+$pdo = db(); ensure_admin_profile_schema();
+$currentUserStmt = $pdo->prepare("SELECT id,email,name,profile_photo FROM users WHERE id=?");
+$currentUserStmt->execute([$_SESSION['uid']]); $currentUser = $currentUserStmt->fetch();
+if (!$currentUser) { $_SESSION = []; session_destroy(); header('Location: /admin/login.php'); exit; }
+$_SESSION['email'] = $currentUser['email']; $_SESSION['name'] = $currentUser['name']; $_SESSION['profile_photo'] = $currentUser['profile_photo'];
+$superuser = is_superuser($currentUser['email']);
+if ($s === 'administradores' && !$superuser) { http_response_code(403); exit('Acceso denegado.'); }
+$fl = flash();
 $nav = fn($k, $label, $extra = '') => '<a class="nav-link'.($s === $k && !$extra ? ' active' : '').'" href="?s='.$k.'">'.$label.'</a>';
 ?><!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
 <title>Panel – <?= e($JUNTA['nombre']) ?></title>
@@ -26,6 +33,7 @@ $nav = fn($k, $label, $extra = '') => '<a class="nav-link'.($s === $k && !$extra
   </div>
   <nav class="nav flex-column gap-1">
     <?= $nav('noticias', 'Noticias') ?><?= $nav('servicios', 'Servicios') ?>
+    <?= $superuser ? $nav('administradores', 'Administradores') : '' ?>
     <a class="nav-link<?= $s==='comprobantes' ? ' active' : '' ?>" href="?s=comprobantes&sub=generar">Comprobantes</a>
     <?php if ($s === 'comprobantes'): ?><div class="sub nav flex-column">
       <a class="nav-link<?= $sub==='historial' ? ' active' : '' ?>" href="?s=comprobantes&sub=historial">Historial de comprobantes</a>
@@ -35,9 +43,55 @@ $nav = fn($k, $label, $extra = '') => '<a class="nav-link'.($s === $k && !$extra
   <a class="nav-link text-white-50 px-0" href="/" target="_blank">Ver sitio</a><a class="nav-link text-white px-0" href="/admin/logout.php">Cerrar sesión</a>
 </aside>
 <main class="col-md-9 col-lg-10 p-3 p-lg-4">
+<header class="admin-topbar">
+  <?php if (!empty($currentUser['profile_photo']) && is_file(__DIR__.'/../'.$currentUser['profile_photo'])): ?>
+    <img class="admin-avatar" src="/<?= e($currentUser['profile_photo']) ?>" alt="">
+  <?php else: ?><span class="admin-avatar admin-avatar-placeholder" aria-hidden="true"><?= e(mb_strtoupper(mb_substr($currentUser['name'] ?: $currentUser['email'], 0, 1))) ?></span><?php endif; ?>
+  <strong>Bienvenido <?= e($currentUser['name'] ?: $currentUser['email']) ?></strong>
+</header>
 <?php if ($fl): ?><div class="alert alert-<?= e($fl[1]) ?> alert-dismissible"><?= e($fl[0]) ?><button class="btn-close" data-bs-dismiss="alert"></button></div><?php endif; ?>
 
-<?php /* ================= NOTICIAS ================= */ if ($s === 'noticias'):
+<?php /* ================= ADMINISTRADORES ================= */ if ($s === 'administradores'):
+  $edit = $_GET['edit'] ?? ''; $editingAdmin = null;
+  if ($edit !== '' && $edit !== 'new') {
+    $q = $pdo->prepare("SELECT id,email,name,profile_photo FROM users WHERE id=?");
+    $q->execute([(int)$edit]); $editingAdmin = $q->fetch();
+  }
+  if ($edit === 'new' || $editingAdmin): ?>
+  <h1 class="h3 mb-3"><?= $editingAdmin ? 'Editar administrador' : 'Agregar administrador' ?></h1>
+  <form method="post" action="actions.php" enctype="multipart/form-data" class="card card-body">
+    <input type="hidden" name="csrf" value="<?= csrf() ?>"><input type="hidden" name="action" value="admin_save">
+    <input type="hidden" name="id" value="<?= (int)($editingAdmin['id'] ?? 0) ?>">
+    <div class="row g-3">
+      <div class="col-md-6"><label class="form-label" for="adminName">Nombre</label><input id="adminName" name="name" class="form-control" required maxlength="120" value="<?= e($editingAdmin['name'] ?? '') ?>"></div>
+      <div class="col-md-6"><label class="form-label" for="adminEmail">Correo</label><input id="adminEmail" type="email" name="email" class="form-control" required maxlength="190" value="<?= e($editingAdmin['email'] ?? '') ?>" <?= is_superuser($editingAdmin['email'] ?? '') ? 'readonly' : '' ?>></div>
+      <div class="col-md-6"><label class="form-label" for="adminPassword"><?= $editingAdmin ? 'Nueva clave (opcional)' : 'Clave inicial' ?></label>
+        <input id="adminPassword" type="password" name="password" class="form-control" <?= $editingAdmin ? '' : 'required' ?> autocomplete="new-password">
+        <small class="form-text text-muted"><?= $editingAdmin ? 'Si la cambias, deberá actualizarla al iniciar sesión.' : e(PASS_MSG).' Se solicitará cambiarla al primer ingreso.' ?></small></div>
+      <div class="col-md-6"><label class="form-label" for="adminPhoto">Foto de perfil (máx. 5 MB; JPG, PNG o WEBP)</label>
+        <input id="adminPhoto" type="file" name="photo" class="form-control" accept="image/jpeg,image/png,image/webp">
+        <?php if (!empty($editingAdmin['profile_photo'])): ?><div class="mt-2 d-flex align-items-center gap-3"><img class="admin-avatar" src="/<?= e($editingAdmin['profile_photo']) ?>" alt=""><label class="small"><input type="checkbox" name="rm_photo" value="1"> Quitar foto</label></div><?php endif; ?></div>
+    </div>
+    <div class="mt-4 d-flex gap-2"><button class="btn btn-sea btn-lg">Guardar administrador</button><a class="btn btn-outline-secondary btn-lg" href="?s=administradores">Cancelar</a></div>
+  </form>
+  <?php else:
+    $admins = $pdo->query("SELECT id,email,name,profile_photo,last_login FROM users ORDER BY name,email")->fetchAll(); ?>
+  <div class="d-flex justify-content-between align-items-center mb-3"><h1 class="h3 mb-0">Administradores</h1><a class="btn btn-sea" href="?s=administradores&edit=new">+ Agregar administrador</a></div>
+  <div class="card"><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Cuenta</th><th>Correo</th><th>Último acceso</th><th></th></tr></thead><tbody>
+  <?php foreach ($admins as $admin): ?><tr>
+    <td><div class="d-flex align-items-center gap-2"><?php if ($admin['profile_photo'] && is_file(__DIR__.'/../'.$admin['profile_photo'])): ?><img class="admin-avatar" src="/<?= e($admin['profile_photo']) ?>" alt=""><?php else: ?><span class="admin-avatar admin-avatar-placeholder" aria-hidden="true"><?= e(mb_strtoupper(mb_substr($admin['name'] ?: $admin['email'], 0, 1))) ?></span><?php endif; ?>
+      <span><?= e($admin['name'] ?: 'Sin nombre') ?><?= is_superuser($admin['email']) ? ' <span class="badge text-bg-warning">Superusuario</span>' : '' ?></span></div></td>
+    <td><?= e($admin['email']) ?></td><td><?= $admin['last_login'] ? date('d/m/Y H:i', strtotime($admin['last_login'])) : '—' ?></td>
+    <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary" href="?s=administradores&edit=<?= (int)$admin['id'] ?>">Editar</a>
+      <?php if (!is_superuser($admin['email']) && (int)$admin['id'] !== (int)$_SESSION['uid']): ?>
+      <form method="post" action="actions.php" class="d-inline" onsubmit="return confirm('¿Eliminar el acceso de <?= e($admin['email']) ?>?')"><input type="hidden" name="csrf" value="<?= csrf() ?>"><input type="hidden" name="action" value="admin_delete"><input type="hidden" name="id" value="<?= (int)$admin['id'] ?>"><button class="btn btn-sm btn-outline-danger">Eliminar</button></form>
+      <?php endif; ?>
+    </td></tr>
+  <?php endforeach; ?>
+  </tbody></table></div></div>
+  <?php endif; ?>
+
+<?php /* ================= NOTICIAS ================= */ elseif ($s === 'noticias'):
   $edit = $_GET['edit'] ?? ''; $n = null;
   if ($edit && $edit !== 'new') { $q = $pdo->prepare("SELECT * FROM news WHERE id=?"); $q->execute([(int)$edit]); $n = $q->fetch(); }
   $editingType = ($n['type'] ?? '') === 'Asambleas' ? 'Asambleas y Reuniones' : ($n['type'] ?? '');

@@ -223,6 +223,15 @@ body.bg-light{background:var(--surface-alt)!important}
 }
 .admin-dashboard .alert-info{color:var(--sea-d);background:var(--foam)}
 .admin-theme-control{padding:.15rem 0 .75rem;border-bottom:1px solid rgba(255,255,255,.16)}
+.admin-topbar{
+  position:sticky;top:0;z-index:1020;display:flex;align-items:center;gap:.75rem;
+  margin:-1rem -1rem 1.5rem;padding:.75rem 1rem;border-bottom:1px solid var(--border);
+  background:color-mix(in srgb,var(--surface-alt) 92%,transparent);color:var(--ink);
+  backdrop-filter:blur(14px)
+}
+.admin-avatar{display:grid;width:42px;height:42px;flex:0 0 42px;place-items:center;object-fit:cover;border:1px solid var(--border);border-radius:50%}
+.admin-avatar-placeholder{background:var(--foam);color:var(--sea);font-weight:800;text-transform:uppercase}
+.admin-dashboard .admin-topbar strong{font-family:"Outfit","DM Sans",sans-serif;font-size:1.04rem}
 
 /* Revelado */
 .reveal{opacity:0;transform:translateY(22px);transition:opacity .65s ease,transform .65s cubic-bezier(.2,.7,.2,1)}

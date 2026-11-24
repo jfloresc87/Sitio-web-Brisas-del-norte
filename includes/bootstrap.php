@@ -15,6 +15,22 @@ function db(string $n = DB_WEB): PDO {
   return $c[$n] ??= new PDO("mysql:host=".DB_HOST.";dbname=$n;charset=utf8mb4", DB_USER, DB_PASS,
     [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);
 }
+function ensure_admin_profile_schema(): void {
+  $pdo = db();
+  foreach (['name'=>'VARCHAR(120) NOT NULL DEFAULT \'\'', 'profile_photo'=>'VARCHAR(255) NULL'] as $column=>$definition) {
+    $check = $pdo->query("SHOW COLUMNS FROM users LIKE ".$pdo->quote($column));
+    if (!$check->fetch()) $pdo->exec("ALTER TABLE users ADD COLUMN `$column` $definition");
+  }
+}
+function is_superuser(?string $email = null): bool {
+  return strtolower(trim($email ?? (string)($_SESSION['email'] ?? ''))) === ADMIN_SUPERUSER_EMAIL;
+}
+function current_user_is_superuser(): bool {
+  if (empty($_SESSION['uid'])) return false;
+  $q = db()->prepare("SELECT email FROM users WHERE id=?");
+  $q->execute([$_SESSION['uid']]);
+  return is_superuser($q->fetchColumn() ?: '');
+}
 function csrf(): string { return $_SESSION['csrf'] ??= bin2hex(random_bytes(16)); }
 function csrf_ok(): bool { return hash_equals($_SESSION['csrf'] ?? '', $_POST['csrf'] ?? ''); }
 function clp($n): string { return '$'.number_format((int)$n, 0, ',', '.'); }
@@ -41,6 +57,12 @@ function require_login(): void {
     $n = isset($_GET['s']) && $_GET['s'] === 'comprobantes' ? '?next=comprobantes' : '';
     header('Location: /admin/login.php'.$n); exit;
   }
+  ensure_admin_profile_schema();
+  $q = db()->prepare("SELECT email,name,profile_photo,must_change FROM users WHERE id=?");
+  $q->execute([$_SESSION['uid']]); $user = $q->fetch();
+  if (!$user) { $_SESSION = []; session_destroy(); header('Location: /admin/login.php'); exit; }
+  $_SESSION['email'] = $user['email']; $_SESSION['name'] = $user['name'];
+  $_SESSION['profile_photo'] = $user['profile_photo']; $_SESSION['must_change'] = (int)$user['must_change'];
   if (!empty($_SESSION['must_change'])) { header('Location: /admin/cambiar_clave.php'); exit; }
 }
 
