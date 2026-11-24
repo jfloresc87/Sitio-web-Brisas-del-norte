@@ -13,7 +13,7 @@ define('DB_REC',  'ulnlxkwm_comprob');          // BDD APARTE para comprobantes
 // ---- Sitio y correo ---------------------------------------------------
 define('BASE_URL',   'https://brisasdelnorteuv8.cl');       // sin "/" final
 define('MAIL_FROM',  'no-reply@brisasdelnorteuv8.cl');      // casilla del dominio (evita spam)
-define('MAIL_TO',    'brisasdelnorteuv8@gmail.com'); // recibe los mensajes del formulario
+define('MAIL_TO',    'brisasdelnortejv8@gmail.com'); // recibe los mensajes del formulario
 define('INSTALL_KEY','Brisas4424'); // se pide al abrir /install.php
 define('ADMIN_SUPERUSER_EMAIL', 'jesus.flores.ci@gmail.com');
 

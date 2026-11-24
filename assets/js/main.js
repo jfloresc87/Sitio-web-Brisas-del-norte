@@ -167,6 +167,7 @@ if (serviceModalElement) {
 const f = $('#contactForm'), mm = new bootstrap.Modal('#msgModal');
 const contactModalEl = $('#contactModal'), contactModal = bootstrap.Modal.getOrCreateInstance(contactModalEl);
 const recaptchaWidget = $('#recaptchaWidget'), captchaError = $('#captchaError');
+let recaptchaWidgetId = null;
 const msg = (t, b) => {
   const showMessage = () => { $('#msgTitle').textContent = t; $('#msgBody').textContent = b; mm.show(); };
   if (contactModalEl.classList.contains('show')) {
@@ -175,29 +176,24 @@ const msg = (t, b) => {
   } else showMessage();
 };
 window.brisasRecaptchaVerified = () => captchaError?.classList.add('d-none');
-async function loadCaptcha() {
-  if (recaptchaWidget) return;
-  try {
-    const r = await fetch('/captcha.php', { cache: 'no-store' });
-    if (!r.ok) throw new Error(`captcha.php respondió ${r.status}`);
-    const data = await r.json();
-    if (typeof data.q !== 'string') throw new Error('captcha.php no devolvió la pregunta.');
-    $('#capQ').textContent = data.q; $('#c_c').value = '';
-  } catch (error) {
-    console.error('No se pudo cargar la verificación del formulario.', error);
-    $('#capQ').textContent = 'No se pudo cargar la verificación';
-  }
+function renderRecaptcha() {
+  if (!recaptchaWidget || !contactModalEl.classList.contains('show') || recaptchaWidgetId !== null || !window.grecaptcha?.render) return;
+  recaptchaWidgetId = window.grecaptcha.render(recaptchaWidget, {
+    sitekey: recaptchaWidget.dataset.sitekey,
+    callback: window.brisasRecaptchaVerified,
+    'expired-callback': () => captchaError?.classList.remove('d-none')
+  });
 }
+window.addEventListener('brisas-recaptcha-ready', renderRecaptcha);
+if (window.brisasRecaptchaReady) renderRecaptcha();
+contactModalEl.addEventListener('shown.bs.modal', renderRecaptcha);
 function resetCaptcha() {
-  if (recaptchaWidget) {
-    window.grecaptcha?.reset?.();
-    captchaError?.classList.add('d-none');
-  } else loadCaptcha();
+  if (recaptchaWidget && recaptchaWidgetId !== null) window.grecaptcha?.reset?.(recaptchaWidgetId);
+  captchaError?.classList.add('d-none');
 }
-loadCaptcha(); $('#capRefresh')?.addEventListener('click', loadCaptcha);
 f.addEventListener('submit', async e => {
   e.preventDefault(); f.classList.add('was-validated');
-  if (recaptchaWidget && !window.grecaptcha?.getResponse?.()) {
+  if (!recaptchaWidget || recaptchaWidgetId === null || !window.grecaptcha?.getResponse?.(recaptchaWidgetId)) {
     captchaError?.classList.remove('d-none');
     return;
   }

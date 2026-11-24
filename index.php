@@ -160,6 +160,24 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
         : 'Hola, quisiera agendar: '.$title;
       $conditionLabel = $serviceKind === 'certificados' ? 'Ver horarios, valor y requisitos' : 'Condiciones de uso';
     ?>
+    <?php if ($serviceKind === 'certificados'): ?>
+    <div class="col-lg-4 reveal"><article class="card h-100 svc">
+      <div class="svc-info-media">
+        <?php if ($conditionReady): ?>
+          <img src="/<?= e($conditionImage) ?>" alt="Horarios, valor y requisitos para certificados de residencia" loading="lazy">
+        <?php else: ?>
+          <span>Sube la ficha a <code>/<?= e($conditionImage) ?></code></span>
+        <?php endif; ?>
+      </div>
+      <div class="svc-card-body">
+        <h3 class="h4"><?= e($title) ?></h3>
+        <?php if ($s['price_text']): ?><span class="price"><?= e($s['price_text']) ?></span><?php endif; ?>
+        <p><?= e($description) ?></p>
+        <?php if ($hasWhatsapp): ?><a class="btn btn-wa mt-auto" target="_blank" rel="noopener noreferrer"
+          href="https://wa.me/<?= e($wa) ?>?text=<?= rawurlencode($whatsappText) ?>">Consultar por WhatsApp</a><?php endif; ?>
+      </div>
+    </article></div>
+    <?php else: ?>
     <div class="col-lg-4 reveal"><article class="card h-100 svc">
       <button type="button" class="svc-trigger" data-service-trigger
         data-title="<?= e($title) ?>" data-description="<?= e($description) ?>"
@@ -180,6 +198,7 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
         </div>
       </button>
     </article></div>
+    <?php endif; ?>
     <?php endforeach; ?>
   </div>
 </div></section>
@@ -218,8 +237,9 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
       <a class="contact-card-link" href="mailto:<?= e($JUNTA['email']) ?>"><?= e($JUNTA['email']) ?></a>
     </div>
     <div class="contact-card">
-      <span class="contact-card-label">Teléfono</span>
-      <a class="contact-card-link" href="tel:<?= e(preg_replace('/[^0-9+]/', '', $JUNTA['telefono'])) ?>"><?= e($JUNTA['telefono']) ?></a>
+      <span class="contact-card-label">WhatsApp</span>
+      <a class="contact-card-link" target="_blank" rel="noopener noreferrer"
+        href="https://wa.me/<?= e($wa) ?>?text=<?= rawurlencode('Hola necesito consultar sobre') ?>">Escríbenos por WhatsApp</a>
     </div>
     <button class="btn btn-sea btn-lg contact-open" type="button" data-bs-toggle="modal" data-bs-target="#contactModal">Escríbenos</button>
   </div>
@@ -285,15 +305,13 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
         <div class="col-12"><label class="form-label" for="c_m">Mensaje</label><textarea class="form-control" id="c_m" name="mensaje" rows="5" required minlength="10" maxlength="2000"></textarea><div class="invalid-feedback">Escribe tu mensaje (mínimo 10 caracteres).</div></div>
         <?php if ($RECAPTCHA_ENABLED): ?>
           <div class="col-12">
-            <div id="recaptchaWidget" class="g-recaptcha" data-sitekey="<?= e($RECAPTCHA['site_key']) ?>" data-size="compact" data-callback="brisasRecaptchaVerified"></div>
+            <div id="recaptchaWidget" data-sitekey="<?= e($RECAPTCHA['site_key']) ?>"></div>
             <p class="small text-danger mt-2 d-none" id="captchaError" role="alert">Completa la verificación reCAPTCHA.</p>
           </div>
         <?php else: ?>
-          <div class="col-md-6"><label class="form-label" for="c_c" id="capQ">Verificación…</label>
-            <div class="input-group"><input class="form-control" id="c_c" name="captcha" required inputmode="numeric" autocomplete="off"><button type="button" class="btn btn-outline-secondary" id="capRefresh" aria-label="Nueva pregunta">↻</button></div>
-            <div class="invalid-feedback">Responde la verificación.</div></div>
+          <div class="col-12"><p class="alert alert-warning mb-0" role="status">El formulario estará disponible cuando se configure el reCAPTCHA oficial. Mientras tanto, puedes contactarnos por WhatsApp.</p></div>
         <?php endif; ?>
-          <div class="col-12"><button type="submit" class="btn btn-sea btn-lg" id="sendBtn">Enviar mensaje</button></div>
+          <div class="col-12"><button type="submit" class="btn btn-sea btn-lg" id="sendBtn" <?= $RECAPTCHA_ENABLED ? '' : 'disabled' ?>>Enviar mensaje</button></div>
         </form>
       </div>
     </div>
@@ -308,7 +326,10 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
   <div class="modal-header"><h3 class="h5 mb-0" id="msgTitle"></h3><button class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
   <div class="modal-body" id="msgBody"></div><div class="modal-footer"><button class="btn btn-sea" data-bs-dismiss="modal">Entendido</button></div></div></div></div>
 
-<?php if ($RECAPTCHA_ENABLED): ?><script src="https://www.google.com/recaptcha/api.js?hl=es" async defer></script><?php endif; ?>
+<?php if ($RECAPTCHA_ENABLED): ?>
+<script>window.brisasRecaptchaOnload=()=>{window.brisasRecaptchaReady=true;window.dispatchEvent(new Event('brisas-recaptcha-ready'))};</script>
+<script src="https://www.google.com/recaptcha/api.js?onload=brisasRecaptchaOnload&render=explicit&hl=es" async defer></script>
+<?php endif; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/assets/js/main.js?v=<?= filemtime(__DIR__.'/assets/js/main.js') ?>"></script>
 </body></html>

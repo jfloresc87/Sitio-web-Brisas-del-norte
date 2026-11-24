@@ -7,39 +7,35 @@ if (!empty($_POST['website'])) jout(['ok'=>true]);                              
 if (time() - ($_SESSION['form_t'] ?? time()) < 3) jout(['ok'=>false,'msg'=>'Envío demasiado rápido, inténtalo nuevamente.'], 429);
 if (time() - ($_SESSION['last_send'] ?? 0) < 30) jout(['ok'=>false,'msg'=>'Espera unos segundos antes de enviar otro mensaje.'], 429);
 
-if ($RECAPTCHA_ENABLED) {
-  $token = $_POST['g-recaptcha-response'] ?? '';
-  if (!is_string($token) || trim($token) === '') jout(['ok'=>false,'msg'=>'Completa la verificación reCAPTCHA.','captcha'=>true], 422);
-  $context = stream_context_create([
-    'http'=>[
-      'method'=>'POST',
-      'header'=>"Content-Type: application/x-www-form-urlencoded\r\n",
-      'content'=>http_build_query(['secret'=>$RECAPTCHA['secret_key'], 'response'=>trim($token)]),
-      'timeout'=>8,
-      'ignore_errors'=>true,
-    ],
-    'ssl'=>['verify_peer'=>true, 'verify_peer_name'=>true],
-  ]);
-  $googleResponse = @file_get_contents('https://www.google.com/recaptcha/api/siteverify', false, $context);
-  if ($googleResponse === false) {
-    $error = error_get_last();
-    error_log('reCAPTCHA verification request failed: '.($error['message'] ?? 'unknown error'));
-    jout(['ok'=>false,'msg'=>'No pudimos verificar reCAPTCHA. Inténtalo nuevamente.'], 503);
-  }
-  $verification = json_decode($googleResponse, true);
-  if (!is_array($verification)) {
-    error_log('reCAPTCHA returned an invalid response.');
-    jout(['ok'=>false,'msg'=>'No pudimos verificar reCAPTCHA. Inténtalo nuevamente.'], 503);
-  }
-  $baseHost = strtolower((string)parse_url(BASE_URL, PHP_URL_HOST));
-  $wwwHost = str_starts_with($baseHost, 'www.') ? substr($baseHost, 4) : 'www.'.$baseHost;
-  $verifiedHost = strtolower((string)($verification['hostname'] ?? ''));
-  if (empty($verification['success']) || !in_array($verifiedHost, [$baseHost, $wwwHost], true)) {
-    jout(['ok'=>false,'msg'=>'La verificación reCAPTCHA no fue aprobada. Inténtalo nuevamente.','captcha'=>true], 422);
-  }
-} else {
-  $cap = $_SESSION['captcha'] ?? null; unset($_SESSION['captcha']);
-  if ($cap === null || (int)($_POST['captcha'] ?? -1) !== (int)$cap) jout(['ok'=>false,'msg'=>'La verificación es incorrecta.','captcha'=>true], 422);
+if (!$RECAPTCHA_ENABLED) jout(['ok'=>false,'msg'=>'El reCAPTCHA oficial aún no está configurado.'], 503);
+$token = $_POST['g-recaptcha-response'] ?? '';
+if (!is_string($token) || trim($token) === '') jout(['ok'=>false,'msg'=>'Completa la verificación reCAPTCHA.','captcha'=>true], 422);
+$context = stream_context_create([
+  'http'=>[
+    'method'=>'POST',
+    'header'=>"Content-Type: application/x-www-form-urlencoded\r\n",
+    'content'=>http_build_query(['secret'=>$RECAPTCHA['secret_key'], 'response'=>trim($token)]),
+    'timeout'=>8,
+    'ignore_errors'=>true,
+  ],
+  'ssl'=>['verify_peer'=>true, 'verify_peer_name'=>true],
+]);
+$googleResponse = @file_get_contents('https://www.google.com/recaptcha/api/siteverify', false, $context);
+if ($googleResponse === false) {
+  $error = error_get_last();
+  error_log('reCAPTCHA verification request failed: '.($error['message'] ?? 'unknown error'));
+  jout(['ok'=>false,'msg'=>'No pudimos verificar reCAPTCHA. Inténtalo nuevamente.'], 503);
+}
+$verification = json_decode($googleResponse, true);
+if (!is_array($verification)) {
+  error_log('reCAPTCHA returned an invalid response.');
+  jout(['ok'=>false,'msg'=>'No pudimos verificar reCAPTCHA. Inténtalo nuevamente.'], 503);
+}
+$baseHost = strtolower((string)parse_url(BASE_URL, PHP_URL_HOST));
+$wwwHost = str_starts_with($baseHost, 'www.') ? substr($baseHost, 4) : 'www.'.$baseHost;
+$verifiedHost = strtolower((string)($verification['hostname'] ?? ''));
+if (empty($verification['success']) || !in_array($verifiedHost, [$baseHost, $wwwHost], true)) {
+  jout(['ok'=>false,'msg'=>'La verificación reCAPTCHA no fue aprobada. Inténtalo nuevamente.','captcha'=>true], 422);
 }
 
 $d = ['nombre'=>clean($_POST['nombre']??'',60), 'apellido'=>clean($_POST['apellido']??'',60), 'correo'=>clean($_POST['correo']??'',120),
