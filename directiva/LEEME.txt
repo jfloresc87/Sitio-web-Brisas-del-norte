@@ -1,0 +1,1 @@
+Fotos de la directiva (cuadradas, ~600x600). Nombres configurables en $DIRECTIVA (includes/config.php).

@@ -1,0 +1,22 @@
+INSTALACION EN cPanel (Junta de Vecinos)
+=========================================
+1) cPanel > "Bases de datos MySQL":
+   - Crear BDD:      ulnlxkwm_brisas
+   - Crear BDD:      ulnlxkwm_comprob     (comprobantes, separada del sitio)
+   - Crear usuario:  ulnlxkwm_junta  (con clave segura)
+   - "Agregar usuario a la base de datos": agregar ulnlxkwm_junta a AMBAS BDD con TODOS LOS PRIVILEGIOS.
+2) cPanel > "Dominios": crear el dominio adicional (su carpeta raiz sera la del sitio, ej. public_html/brisasdelnorteuv8.cl).
+   Activa SSL (AutoSSL / Let's Encrypt).
+3) Edita includes/config.php: DB_PASS, BASE_URL, MAIL_FROM (crea una casilla no-reply@brisasdelnorteuv8.cl), INSTALL_KEY,
+   datos de la junta, whatsapp, carrusel y directiva.
+4) Sube TODO el contenido de esta carpeta a la raiz del dominio (Administrador de archivos o FTP).
+5) PHP: cPanel > "Select PHP Version": usa 8.1 o superior; activa extensiones: gd, fileinfo, mbstring, pdo_mysql.
+   El archivo .user.ini ya sube el limite de archivos a 50 MB.
+6) Abre https://brisasdelnorteuv8.cl/install.php?key=TU_INSTALL_KEY  -> crea tablas y usuarios. Luego BORRA install.php.
+7) Ingreso: /admin/login.php con los 3 correos y clave inicial  Brisas2016.  (se exige cambiarla al entrar).
+8) Reemplaza assets/img/logo.png por el logo real (PNG, fondo transparente) y sube fotos a /inicio y /directiva.
+
+NOTAS
+- Los comprobantes se guardan en la BDD ulnlxkwm_comprob (tabla receipts). El N° correlativo es el id autoincremental.
+- Correos: usan mail()/sendmail del hosting. Si llegan a spam, crea los registros SPF/DKIM desde cPanel > "Email Deliverability".
+- Captcha: pregunta de suma propia + campo trampa + tiempo minimo + limite de envios (sin servicios externos).

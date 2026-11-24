@@ -1,0 +1,7 @@
+# Nada de scripts dentro de uploads (seguridad)
+RemoveHandler .php .phtml .php3 .php5 .php7 .phps
+RemoveType .php .phtml
+<FilesMatch "\.(php|phtml|php\d|phar)$">
+  Require all denied
+</FilesMatch>
+Options -Indexes -ExecCGI
