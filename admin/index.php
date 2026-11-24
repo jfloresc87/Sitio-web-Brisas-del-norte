@@ -6,17 +6,24 @@ $fl = flash(); $pdo = db();
 $nav = fn($k, $label, $extra = '') => '<a class="nav-link'.($s === $k && !$extra ? ' active' : '').'" href="?s='.$k.'">'.$label.'</a>';
 ?><!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
 <title>Panel – <?= e($JUNTA['nombre']) ?></title>
-<script>(()=>{let t='light';try{const s=localStorage.getItem('brisas-theme');if(s==='light'||s==='dark')t=s}catch(e){console.warn('No se pudo leer la preferencia de tema guardada.',e)}document.documentElement.dataset.theme=t})();</script>
+<script>(()=>{let t='light';try{const s=localStorage.getItem('brisas-theme');if(s==='light'||s==='dark')t=s}catch(e){console.warn('No se pudo leer la preferencia de tema guardada.',e)}document.documentElement.dataset.theme=t;document.documentElement.dataset.bsTheme=t})();</script>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="/assets/css/style.css?v=<?= filemtime(__DIR__.'/../assets/css/style.css') ?>" rel="stylesheet">
 <style>.side{background:var(--sea-d);min-height:100vh}.side .nav-link{color:rgba(255,255,255,.82);border-radius:.65rem}.side .nav-link.active,.side .nav-link:hover{background:rgba(255,255,255,.14);color:#fff}
 .side .sub .nav-link{padding-left:2rem;font-size:.92rem}.thumb-sm{width:90px;height:60px;object-fit:cover;border-radius:.3rem}.gimg{position:relative;display:inline-block}.gimg img{width:100px;height:70px;object-fit:cover;border-radius:.3rem}</style>
-</head><body class="bg-light">
+</head><body class="bg-light admin-dashboard">
 <div class="container-fluid"><div class="row">
 <aside class="col-md-3 col-lg-2 side p-3">
   <div class="d-flex align-items-center gap-2 mb-3 text-white"><img src="/<?= e($JUNTA['logo']) ?>" width="38" height="38" alt=""><strong class="small"><?= e($JUNTA['nombre']) ?></strong></div>
+  <div class="admin-theme-control d-flex align-items-center justify-content-between mb-3">
+    <span class="small text-white-50">Apariencia</span>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Cambiar a modo oscuro" title="Cambiar tema">
+      <span class="theme-icon theme-icon-sun" aria-hidden="true">☀</span>
+      <span class="theme-icon theme-icon-moon" aria-hidden="true">☾</span>
+    </button>
+  </div>
   <nav class="nav flex-column gap-1">
     <?= $nav('noticias', 'Noticias') ?><?= $nav('servicios', 'Servicios') ?>
     <a class="nav-link<?= $s==='comprobantes' ? ' active' : '' ?>" href="?s=comprobantes&sub=generar">Comprobantes</a>
@@ -33,13 +40,14 @@ $nav = fn($k, $label, $extra = '') => '<a class="nav-link'.($s === $k && !$extra
 <?php /* ================= NOTICIAS ================= */ if ($s === 'noticias'):
   $edit = $_GET['edit'] ?? ''; $n = null;
   if ($edit && $edit !== 'new') { $q = $pdo->prepare("SELECT * FROM news WHERE id=?"); $q->execute([(int)$edit]); $n = $q->fetch(); }
+  $editingType = ($n['type'] ?? '') === 'Asambleas' ? 'Asambleas y Reuniones' : ($n['type'] ?? '');
   if ($edit === 'new' || $n): ?>
   <h1 class="h3 mb-3"><?= $n ? 'Editar noticia' : 'Nueva noticia' ?></h1>
   <form method="post" action="actions.php" enctype="multipart/form-data" class="card card-body" id="newsForm">
     <input type="hidden" name="csrf" value="<?= csrf() ?>"><input type="hidden" name="action" value="news_save"><input type="hidden" name="id" value="<?= (int)($n['id'] ?? 0) ?>">
     <div class="row g-3">
       <div class="col-md-4"><label class="form-label">Tipo de noticia</label><select name="type" class="form-select" required>
-        <option value="">Selecciona…</option><?php foreach ($TIPOS_NOTICIA as $t): ?><option<?= ($n['type'] ?? '') === $t ? ' selected' : '' ?>><?= e($t) ?></option><?php endforeach; ?></select></div>
+        <option value="">Selecciona…</option><?php foreach ($TIPOS_NOTICIA as $t): ?><option<?= $editingType === $t ? ' selected' : '' ?>><?= e($t) ?></option><?php endforeach; ?></select></div>
       <div class="col-md-8"><label class="form-label">Título de la noticia</label><input name="title" class="form-control" required maxlength="150" value="<?= e($n['title'] ?? '') ?>"></div>
       <div class="col-12"><label class="form-label">Resumen SEO <small class="text-muted">(se muestra en la tarjeta; <span id="seoCount">0</span>/160)</small></label>
         <input name="seo" id="seo" class="form-control" required minlength="10" maxlength="160" value="<?= e($n['seo'] ?? '') ?>"></div>
@@ -56,7 +64,7 @@ $nav = fn($k, $label, $extra = '') => '<a class="nav-link'.($s === $k && !$extra
   <div class="card"><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th></th><th>Título</th><th>Tipo</th><th>Fecha</th><th></th></tr></thead><tbody>
   <?php foreach ($rows as $r): ?><tr>
     <td><?= $r['media_type']==='video' ? '<span class="badge text-bg-secondary">Video</span>' : '<img class="thumb-sm" src="/'.e($r['media_path']).'" alt="">' ?></td>
-    <td><?= e($r['title']) ?></td><td><span class="badge text-bg-warning"><?= e($r['type']) ?></span></td><td><?= date('d/m/Y', strtotime($r['created_at'])) ?></td>
+    <td><?= e($r['title']) ?></td><td><span class="badge text-bg-warning"><?= e($r['type'] === 'Asambleas' ? 'Asambleas y Reuniones' : $r['type']) ?></span></td><td><?= date('d/m/Y', strtotime($r['created_at'])) ?></td>
     <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary" href="?s=noticias&edit=<?= $r['id'] ?>">Editar</a>
       <form method="post" action="actions.php" class="d-inline" onsubmit="return confirm('¿Eliminar esta noticia?')"><input type="hidden" name="csrf" value="<?= csrf() ?>"><input type="hidden" name="action" value="news_delete"><input type="hidden" name="id" value="<?= $r['id'] ?>"><button class="btn btn-sm btn-outline-danger">Eliminar</button></form></td></tr>
   <?php endforeach; if (!$rows) echo '<tr><td colspan="5" class="text-center text-muted py-4">Aún no hay noticias. Crea la primera con “Nueva noticia”.</td></tr>'; ?>
@@ -79,6 +87,7 @@ $nav = fn($k, $label, $extra = '') => '<a class="nav-link'.($s === $k && !$extra
       <div class="col-md-6"><label class="form-label">Imagen de condiciones / reglas</label><input type="file" name="cond" class="form-control" accept="image/jpeg,image/png,image/webp">
         <?php if (!empty($v['cond_image'])): ?><div class="mt-2 d-flex align-items-center gap-3"><img class="thumb-sm" src="/<?= e($v['cond_image']) ?>" alt=""><label class="small"><input type="checkbox" name="rm_cond" value="1"> Quitar</label></div><?php endif; ?></div>
       <div class="col-md-6"><label class="form-label">Agregar imágenes a la galería <small class="text-muted">(recomendado 3 a 10 en total)</small></label><input type="file" name="gallery[]" class="form-control" multiple accept="image/jpeg,image/png,image/webp"></div>
+      <div class="col-12"><p class="small text-muted mb-0">Las imágenes de galería se guardan en <code>/uploads/services/</code>. También puedes subir allí por FTP las fichas informativas con los nombres indicados en las instrucciones de instalación.</p></div>
       <?php if ($gal): ?><div class="col-12"><div class="form-label">Imágenes actuales (<?= count($gal) ?>) – marca las que quieras quitar</div><div class="d-flex flex-wrap gap-3">
         <?php foreach ($gal as $p): ?><label class="gimg"><img src="/<?= e($p) ?>" alt=""><br><input type="checkbox" name="rm_img[]" value="<?= e($p) ?>"> Quitar</label><?php endforeach; ?></div></div><?php endif; ?>
     </div>
@@ -136,6 +145,12 @@ $nav = fn($k, $label, $extra = '') => '<a class="nav-link'.($s === $k && !$extra
 <?php endif; endif; ?>
 </main></div></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const themeToggle=document.getElementById('themeToggle');
+function syncThemeControl(){const dark=document.documentElement.dataset.theme==='dark';themeToggle.setAttribute('aria-label',dark?'Cambiar a modo claro':'Cambiar a modo oscuro');themeToggle.setAttribute('title',dark?'Cambiar a modo claro':'Cambiar a modo oscuro');themeToggle.setAttribute('aria-pressed',String(dark));}
+syncThemeControl();
+themeToggle.addEventListener('click',()=>{const next=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=next;document.documentElement.dataset.bsTheme=next;syncThemeControl();try{localStorage.setItem('brisas-theme',next)}catch(error){console.warn('No se pudo guardar la preferencia de tema.',error)}});
+</script>
 <?php if ($s === 'noticias'): ?><script>
 const seo=document.getElementById('seo'),sc=document.getElementById('seoCount'),m=document.getElementById('media');
 if(seo){const u=()=>sc.textContent=seo.value.length;seo.addEventListener('input',u);u();

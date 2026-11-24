@@ -72,7 +72,7 @@ $DIRECTIVA = [
 ];
 
 // ---- Tipos de noticia -------------------------------------------------
-$TIPOS_NOTICIA = ['Seguridad', 'Avisos Comunitarios', 'Asambleas'];
+$TIPOS_NOTICIA = ['Noticias', 'Seguridad', 'Avisos Comunitarios', 'Asambleas y Reuniones'];
 
 // ---- Tarifas (comprobantes) -------------------------------------------
 define('PRECIO_CANCHA_HORA', 8000);

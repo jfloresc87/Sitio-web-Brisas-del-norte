@@ -86,6 +86,83 @@ $$('[data-news]').forEach(c => { c.addEventListener('click', () => openNews(c.da
   c.addEventListener('keydown', e => { if (e.key === 'Enter') openNews(c.dataset.news); }); });
 $('#newsModal').addEventListener('hidden.bs.modal', () => $('#nmMedia').innerHTML = '');
 
+/* ---- Servicios: galería y detalles en modal ---- */
+const serviceModalElement = $('#serviceModal');
+if (serviceModalElement) {
+  const serviceModal = new bootstrap.Modal(serviceModalElement);
+  const serviceGallery = $('#serviceModalGallery');
+  const conditionButton = $('#serviceModalConditions');
+  const conditionPanel = $('#serviceConditionPanel');
+  const conditionImage = $('#serviceConditionImage');
+  const conditionUnavailable = $('#serviceConditionUnavailable');
+  const whatsappButton = $('#serviceModalWhatsapp');
+  let activeServiceTrigger = null;
+  $$('[data-service-trigger]').forEach(trigger => trigger.addEventListener('click', () => {
+    activeServiceTrigger = trigger;
+    $('#serviceModalTitle').textContent = trigger.dataset.title;
+    $('#serviceModalDescription').textContent = trigger.dataset.description;
+    const price = $('#serviceModalPrice');
+    price.textContent = trigger.dataset.price;
+    price.classList.toggle('d-none', !trigger.dataset.price);
+
+    serviceGallery.replaceChildren();
+    let photos;
+    try {
+      photos = JSON.parse(trigger.dataset.gallery || '[]');
+      if (!Array.isArray(photos)) throw new Error('La galería del servicio no es válida.');
+    } catch (error) {
+      console.error('No se pudo leer la galería del servicio.', error);
+      photos = [];
+    }
+    photos.filter(path => typeof path === 'string' && path !== '').forEach((path, index) => {
+      const image = document.createElement('img');
+      image.src = path.startsWith('/') ? path : `/${path}`;
+      image.alt = `${trigger.dataset.title}, foto ${index + 1}`;
+      image.loading = 'lazy';
+      serviceGallery.append(image);
+    });
+    if (!serviceGallery.childElementCount) {
+      const empty = document.createElement('p');
+      empty.className = 'service-gallery-empty';
+      empty.textContent = 'Pronto podrás ver aquí las fotos de este espacio.';
+      serviceGallery.append(empty);
+    }
+
+    const conditionPath = trigger.dataset.condition || '';
+    conditionButton.textContent = trigger.dataset.conditionLabel || 'Condiciones de uso';
+    conditionButton.classList.toggle('d-none', !conditionPath);
+    conditionPanel.classList.add('d-none');
+    conditionImage.classList.add('d-none');
+    conditionImage.removeAttribute('src');
+    conditionUnavailable.classList.add('d-none');
+
+    const whatsappUrl = trigger.dataset.whatsapp || '';
+    whatsappButton.href = whatsappUrl || '#';
+    whatsappButton.textContent = trigger.dataset.whatsappLabel || 'Consultar por WhatsApp';
+    whatsappButton.classList.toggle('d-none', !whatsappUrl);
+    serviceModal.show();
+  }));
+  conditionButton.addEventListener('click', () => {
+    conditionPanel.classList.remove('d-none');
+    if (activeServiceTrigger?.dataset.conditionReady === 'true') {
+      const path = activeServiceTrigger.dataset.condition || '';
+      conditionImage.src = path.startsWith('/') ? path : `/${path}`;
+      conditionImage.alt = conditionButton.textContent;
+      conditionImage.classList.remove('d-none');
+    } else {
+      const path = activeServiceTrigger?.dataset.condition || '';
+      conditionUnavailable.textContent = `La imagen aún no está disponible. Súbela en: /${path}`;
+      conditionUnavailable.classList.remove('d-none');
+    }
+  });
+  $('#serviceConditionClose').addEventListener('click', () => conditionPanel.classList.add('d-none'));
+  serviceModalElement.addEventListener('hidden.bs.modal', () => {
+    serviceGallery.replaceChildren();
+    conditionImage.removeAttribute('src');
+    conditionPanel.classList.add('d-none');
+  });
+}
+
 /* ---- Contacto: validación, captcha y envío ---- */
 const f = $('#contactForm'), mm = new bootstrap.Modal('#msgModal');
 const contactModalEl = $('#contactModal'), contactModal = bootstrap.Modal.getOrCreateInstance(contactModalEl);

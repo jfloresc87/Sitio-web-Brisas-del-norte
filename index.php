@@ -95,19 +95,19 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
     <?php foreach ($TIPOS_NOTICIA as $t): ?><button class="btn btn-chip" data-filter="<?= e($t) ?>"><?= e($t) ?></button><?php endforeach; ?>
   </div>
   <div class="row g-4" id="newsGrid">
-    <?php foreach ($news as $n): $mp = '/'.$n['media_path']; ?>
-    <div class="col-md-6 col-lg-4 news-item" data-type="<?= e($n['type']) ?>">
+    <?php foreach ($news as $n): $mp = '/'.$n['media_path']; $newsType = $n['type'] === 'Asambleas' ? 'Asambleas y Reuniones' : $n['type']; ?>
+    <div class="col-md-6 col-lg-4 news-item" data-type="<?= e($newsType) ?>">
       <article class="card h-100 news-card" role="button" tabindex="0" data-news="<?= (int)$n['id'] ?>">
         <div class="thumb">
           <?php if ($n['media_type']==='video'): ?><video src="<?= e($mp) ?>#t=0.5" preload="metadata" muted playsinline></video><span class="play">▶</span>
           <?php else: ?><img src="<?= e($mp) ?>" alt="" loading="lazy"><?php endif; ?>
-          <span class="badge-type"><?= e($n['type']) ?></span>
+          <span class="badge-type"><?= e($newsType) ?></span>
         </div>
         <div class="card-body"><small class="text-muted"><?= date('d/m/Y', strtotime($n['created_at'])) ?></small>
           <h3 class="h5 mt-1"><?= e($n['title']) ?></h3><p class="small mb-0"><?= e($n['seo']) ?></p></div>
       </article>
       <div class="d-none" id="nb-<?= (int)$n['id'] ?>"
-           data-title="<?= e($n['title']) ?>" data-type="<?= e($n['type']) ?>" data-date="<?= date('d/m/Y', strtotime($n['created_at'])) ?>"
+           data-title="<?= e($n['title']) ?>" data-type="<?= e($newsType) ?>" data-date="<?= date('d/m/Y', strtotime($n['created_at'])) ?>"
            data-media="<?= e($mp) ?>" data-mtype="<?= e($n['media_type']) ?>"><?= nl2br(e($n['body'])) ?></div>
     </div>
     <?php endforeach; ?>
@@ -122,23 +122,92 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
 <section id="servicios" class="py-5"><div class="container">
   <div class="section-heading reveal"><span>Espacios y reservas</span><h2 class="sec-title">Servicios comunitarios</h2><p>Conoce los espacios disponibles y solicita tu reserva directamente.</p></div>
   <div class="row g-4">
-    <?php foreach ($services as $s): $g = json_decode($s['gallery'] ?: '[]', true) ?: []; ?>
-    <div class="col-lg-4"><div class="card h-100 svc">
-      <?php if ($g): ?><div class="gallery"><?php foreach ($g as $p): ?>
-        <img src="/<?= e($p) ?>" alt="<?= e($s['title']) ?>" loading="lazy" data-zoom="/<?= e($p) ?>" role="button"><?php endforeach; ?></div><?php endif; ?>
-      <div class="card-body d-flex flex-column">
-        <h3 class="h4"><?= e($s['title']) ?></h3>
-        <?php if ($s['price_text']): ?><div class="price"><?= e($s['price_text']) ?></div><?php endif; ?>
-        <p class="mt-2"><?= nl2br(e($s['description'])) ?></p>
-        <div class="mt-auto d-grid gap-2">
-          <?php if ($s['cond_image']): ?><button class="btn btn-outline-sea" data-zoom="/<?= e($s['cond_image']) ?>">Ver condiciones</button><?php endif; ?>
-          <?php if ($s['whatsapp'] && $wa): ?><a class="btn btn-wa" target="_blank" rel="noopener"
-            href="https://wa.me/<?= e($wa) ?>?text=<?= rawurlencode('Hola, quisiera agendar: '.$s['title']) ?>">Agendar por WhatsApp</a><?php endif; ?>
+    <?php foreach ($services as $s):
+      $title = $s['title'];
+      $titleKey = mb_strtolower($title, 'UTF-8');
+      $serviceKind = str_contains($titleKey, 'cancha') ? 'cancha'
+        : (str_contains($titleKey, 'sede') ? 'sede'
+        : ((str_contains($titleKey, 'certificado') || str_contains($titleKey, 'residencia')) ? 'certificados' : 'otro'));
+      $gallery = json_decode($s['gallery'] ?: '[]', true);
+      $gallery = is_array($gallery) ? array_values(array_filter($gallery, static fn($path) => is_string($path) && $path !== '')) : [];
+      $description = trim((string)$s['description']);
+      if ($description === '') $description = match ($serviceKind) {
+        'cancha' => 'Arrienda la cancha para encuentros deportivos y disfruta de un espacio para compartir en comunidad.',
+        'sede' => 'Espacio disponible para reuniones y actividades vecinales. Consulta fechas, capacidad y condiciones.',
+        'certificados' => 'Solicita información sobre el certificado de residencia y consulta horarios, valores y requisitos.',
+        default => 'Conoce este servicio comunitario y contáctanos para resolver tus dudas.',
+      };
+      $fixedCondition = match ($serviceKind) {
+        'cancha' => 'uploads/services/condiciones-cancha.jpg',
+        'sede' => 'uploads/services/condiciones-sede.jpg',
+        'certificados' => 'uploads/services/certificados.jpg',
+        default => '',
+      };
+      $conditionImage = $fixedCondition ?: (string)($s['cond_image'] ?? '');
+      if ($fixedCondition && !is_file(__DIR__.'/'.$fixedCondition) && !empty($s['cond_image']) && is_file(__DIR__.'/'.$s['cond_image'])) {
+        $conditionImage = $s['cond_image'];
+      }
+      $conditionReady = $conditionImage !== '' && is_file(__DIR__.'/'.$conditionImage);
+      $hasWhatsapp = $wa && ($serviceKind !== 'otro' || !empty($s['whatsapp']));
+      $whatsappLabel = match ($serviceKind) {
+        'cancha' => 'Agendar cancha',
+        'sede' => 'Agendar sede',
+        'certificados' => 'Consultar por WhatsApp',
+        default => 'Agendar por WhatsApp',
+      };
+      $whatsappText = $serviceKind === 'certificados'
+        ? 'Hola, quisiera consultar por certificados de residencia.'
+        : 'Hola, quisiera agendar: '.$title;
+      $conditionLabel = $serviceKind === 'certificados' ? 'Ver horarios, valor y requisitos' : 'Condiciones de uso';
+    ?>
+    <div class="col-lg-4 reveal"><article class="card h-100 svc">
+      <button type="button" class="svc-trigger" data-service-trigger
+        data-title="<?= e($title) ?>" data-description="<?= e($description) ?>"
+        data-price="<?= e($s['price_text']) ?>" data-gallery="<?= e(json_encode($gallery, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)) ?>"
+        data-condition="<?= e($conditionImage) ?>" data-condition-ready="<?= $conditionReady ? 'true' : 'false' ?>"
+        data-condition-label="<?= e($conditionLabel) ?>"
+        data-whatsapp="<?= $hasWhatsapp ? e('https://wa.me/'.$wa.'?text='.rawurlencode($whatsappText)) : '' ?>"
+        data-whatsapp-label="<?= e($whatsappLabel) ?>">
+        <div class="svc-media">
+          <?php if ($gallery): ?><img src="/<?= e($gallery[0]) ?>" alt="" loading="lazy">
+          <?php else: ?><span>Fotos próximamente</span><?php endif; ?>
         </div>
-      </div></div></div>
+        <div class="svc-card-body">
+          <h3 class="h4"><?= e($title) ?></h3>
+          <?php if ($s['price_text']): ?><span class="price"><?= e($s['price_text']) ?></span><?php endif; ?>
+          <p><?= e($description) ?></p>
+          <span class="svc-open-label">Ver detalles y galería <span aria-hidden="true">↗</span></span>
+        </div>
+      </button>
+    </article></div>
     <?php endforeach; ?>
   </div>
 </div></section>
+
+<div class="modal fade" id="serviceModal" tabindex="-1" aria-labelledby="serviceModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div><span class="section-kicker">Servicios comunitarios</span><h2 class="h4 mt-1 mb-0" id="serviceModalTitle"></h2></div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-2" id="serviceModalDescription"></p>
+        <p class="price d-none mb-3" id="serviceModalPrice"></p>
+        <div class="service-modal-gallery" id="serviceModalGallery"></div>
+        <div class="service-condition-panel d-none mt-4" id="serviceConditionPanel">
+          <button type="button" class="btn-close float-end" id="serviceConditionClose" aria-label="Cerrar condiciones"></button>
+          <img class="img-fluid rounded d-none" id="serviceConditionImage" alt="">
+          <p class="small text-muted d-none mb-0" id="serviceConditionUnavailable"></p>
+        </div>
+      </div>
+      <div class="modal-footer flex-wrap justify-content-start">
+        <button type="button" class="btn btn-outline-sea d-none" id="serviceModalConditions"></button>
+        <a class="btn btn-wa d-none" id="serviceModalWhatsapp" target="_blank" rel="noopener noreferrer"></a>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ===== CONTACTO ===== -->
 <section id="contacto" class="py-5 band"><div class="container">

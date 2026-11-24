@@ -20,6 +20,9 @@ INSTALACION EN cPanel (Junta de Vecinos)
    <?php return ['site_key'=>'CLAVE_DEL_SITIO', 'secret_key'=>'CLAVE_SECRETA'];
    Este archivo está excluido de Git y protegido por includes/.htaccess; no publiques la clave secreta.
    Si no existe, el formulario conserva la verificación de suma actual.
+10) Fotos de servicios: sube las galerías desde Administración > Servicios > Editar; se guardan en
+    /uploads/services/. Crea esa carpeta si aún no existe y sube por FTP las fichas con estos nombres:
+    condiciones-cancha.jpg, condiciones-sede.jpg y certificados.jpg.
 
 NOTAS
 - Los comprobantes se guardan en la BDD ulnlxkwm_comprob (tabla receipts). El N° correlativo es el id autoincremental.
