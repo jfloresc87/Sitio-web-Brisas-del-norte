@@ -211,15 +211,23 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
         <div class="service-modal-gallery" id="serviceModalGallery"></div>
         <img class="service-certificate-image d-none" id="serviceCertificateImage" alt="">
         <p class="small text-muted d-none mb-0" id="serviceCertificateUnavailable"></p>
-        <div class="service-condition-panel d-none mt-4" id="serviceConditionPanel">
-          <button type="button" class="btn-close float-end" id="serviceConditionClose" aria-label="Cerrar condiciones"></button>
-          <img class="img-fluid rounded d-none" id="serviceConditionImage" alt="">
-          <p class="small text-muted d-none mb-0" id="serviceConditionUnavailable"></p>
-        </div>
       </div>
       <div class="modal-footer flex-wrap justify-content-start">
         <button type="button" class="btn btn-outline-sea d-none" id="serviceModalConditions"></button>
         <a class="btn btn-wa d-none" id="serviceModalWhatsapp" target="_blank" rel="noopener noreferrer"></a>
+      </div>
+      <div class="service-condition-panel d-none" id="serviceConditionPanel" role="region" aria-label="Condiciones de uso">
+        <div class="service-condition-toolbar">
+          <strong>Condiciones de uso</strong>
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-outline-sea btn-sm" id="serviceConditionZoom" aria-pressed="false" disabled>Ampliar</button>
+            <button type="button" class="btn-close" id="serviceConditionClose" aria-label="Volver al servicio"></button>
+          </div>
+        </div>
+        <div class="service-condition-viewport" id="serviceConditionViewport">
+          <img class="d-none" id="serviceConditionImage" alt="">
+          <p class="small text-muted d-none mb-0" id="serviceConditionUnavailable"></p>
+        </div>
       </div>
     </div>
   </div>

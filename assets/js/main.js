@@ -104,6 +104,8 @@ if (serviceModalElement) {
   const conditionPanel = $('#serviceConditionPanel');
   const conditionImage = $('#serviceConditionImage');
   const conditionUnavailable = $('#serviceConditionUnavailable');
+  const conditionViewport = $('#serviceConditionViewport');
+  const conditionZoomButton = $('#serviceConditionZoom');
   const certificateImage = $('#serviceCertificateImage');
   const certificateUnavailable = $('#serviceCertificateUnavailable');
   const whatsappButton = $('#serviceModalWhatsapp');
@@ -177,7 +179,12 @@ if (serviceModalElement) {
     conditionPanel.classList.add('d-none');
     conditionImage.classList.add('d-none');
     conditionImage.removeAttribute('src');
+    conditionImage.classList.remove('is-zoomed');
     conditionUnavailable.classList.add('d-none');
+    conditionViewport.classList.remove('is-zoomed');
+    conditionZoomButton.disabled = true;
+    conditionZoomButton.textContent = 'Ampliar';
+    conditionZoomButton.setAttribute('aria-pressed', 'false');
     certificateImage.classList.add('d-none');
     certificateImage.removeAttribute('src');
     certificateUnavailable.classList.add('d-none');
@@ -200,6 +207,11 @@ if (serviceModalElement) {
   }));
   conditionButton.addEventListener('click', () => {
     conditionPanel.classList.remove('d-none');
+    conditionImage.classList.remove('is-zoomed');
+    conditionViewport.classList.remove('is-zoomed');
+    conditionZoomButton.disabled = activeServiceTrigger?.dataset.conditionReady !== 'true';
+    conditionZoomButton.textContent = 'Ampliar';
+    conditionZoomButton.setAttribute('aria-pressed', 'false');
     if (activeServiceTrigger?.dataset.conditionReady === 'true') {
       const path = activeServiceTrigger.dataset.condition || '';
       conditionImage.src = path.startsWith('/') ? path : `/${path}`;
@@ -210,8 +222,22 @@ if (serviceModalElement) {
       conditionUnavailable.textContent = `La imagen aún no está disponible. Súbela en: /${path}`;
       conditionUnavailable.classList.remove('d-none');
     }
+    $('#serviceConditionClose').focus();
   });
-  $('#serviceConditionClose').addEventListener('click', () => conditionPanel.classList.add('d-none'));
+  conditionZoomButton.addEventListener('click', () => {
+    const zoomed = conditionImage.classList.toggle('is-zoomed');
+    conditionViewport.classList.toggle('is-zoomed', zoomed);
+    conditionZoomButton.textContent = zoomed ? 'Restablecer zoom' : 'Ampliar';
+    conditionZoomButton.setAttribute('aria-pressed', String(zoomed));
+  });
+  $('#serviceConditionClose').addEventListener('click', () => {
+    conditionPanel.classList.add('d-none');
+    conditionImage.classList.remove('is-zoomed');
+    conditionViewport.classList.remove('is-zoomed');
+    conditionZoomButton.textContent = 'Ampliar';
+    conditionZoomButton.setAttribute('aria-pressed', 'false');
+    conditionButton.focus();
+  });
   serviceModalElement.addEventListener('hidden.bs.modal', () => {
     serviceGallery.replaceChildren();
     serviceGallery.classList.remove('d-none');
@@ -219,6 +245,11 @@ if (serviceModalElement) {
     conditionImage.removeAttribute('src');
     certificateImage.removeAttribute('src');
     conditionPanel.classList.add('d-none');
+    conditionImage.classList.remove('is-zoomed');
+    conditionViewport.classList.remove('is-zoomed');
+    conditionZoomButton.disabled = true;
+    conditionZoomButton.textContent = 'Ampliar';
+    conditionZoomButton.setAttribute('aria-pressed', 'false');
   });
 }
 
