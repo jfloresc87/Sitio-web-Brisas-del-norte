@@ -15,8 +15,14 @@ INSTALACION EN cPanel (Junta de Vecinos)
 6) Abre https://brisasdelnorteuv8.cl/install.php?key=TU_INSTALL_KEY  -> crea tablas y usuarios. Luego BORRA install.php.
 7) Ingreso: /admin/login.php con los 3 correos y clave inicial  Brisas2016.  (se exige cambiarla al entrar).
 8) Reemplaza assets/img/logo.png por el logo real (PNG, fondo transparente) y sube fotos a /inicio y /directiva.
+9) Opcional, reCAPTCHA oficial: crea una clave "Challenge (v2)" para brisasdelnorteuv8.cl en
+   https://www.google.com/recaptcha/admin/create. En includes/recaptcha.local.php agrega:
+   <?php return ['site_key'=>'CLAVE_DEL_SITIO', 'secret_key'=>'CLAVE_SECRETA'];
+   Este archivo está excluido de Git y protegido por includes/.htaccess; no publiques la clave secreta.
+   Si no existe, el formulario conserva la verificación de suma actual.
 
 NOTAS
 - Los comprobantes se guardan en la BDD ulnlxkwm_comprob (tabla receipts). El N° correlativo es el id autoincremental.
 - Correos: usan mail()/sendmail del hosting. Si llegan a spam, crea los registros SPF/DKIM desde cPanel > "Email Deliverability".
-- Captcha: pregunta de suma propia + campo trampa + tiempo minimo + limite de envios (sin servicios externos).
+- Contacto: reCAPTCHA oficial opcional; sin claves configuradas usa la suma propia. Se mantienen campo trampa,
+  tiempo minimo y limite de envios.

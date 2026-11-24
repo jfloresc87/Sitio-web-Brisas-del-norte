@@ -142,28 +142,17 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
 
 <!-- ===== CONTACTO ===== -->
 <section id="contacto" class="py-5 band"><div class="container">
-  <div class="section-heading reveal"><span>Escríbenos</span><h2 class="sec-title">Contacto</h2><p>Estamos disponibles para escuchar tus consultas y propuestas.</p></div>
-  <div class="row g-4">
-    <div class="col-lg-4">
-      <p><strong>Dirección</strong><br><?= e($JUNTA['direccion']) ?></p>
-      <p><strong>Teléfono</strong><br><?= e($JUNTA['telefono']) ?></p>
-      <p><strong>Correo</strong><br><?= e($JUNTA['email']) ?></p>
+  <div class="section-heading reveal"><span>Contacto</span><h2 class="sec-title">Estamos para ayudarte</h2><p>Comunícate con la junta o envíanos tu consulta.</p></div>
+  <div class="contact-panel reveal">
+    <div class="contact-card">
+      <span class="contact-card-label">Correo electrónico</span>
+      <a class="contact-card-link" href="mailto:<?= e($JUNTA['email']) ?>"><?= e($JUNTA['email']) ?></a>
     </div>
-    <div class="col-lg-8">
-      <form id="contactForm" class="row g-3" novalidate>
-        <input type="hidden" name="csrf" value="<?= csrf() ?>">
-        <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
-        <div class="col-md-6"><label class="form-label" for="c_n">Nombre</label><input class="form-control" id="c_n" name="nombre" required maxlength="60" autocomplete="given-name"><div class="invalid-feedback">Ingresa tu nombre.</div></div>
-        <div class="col-md-6"><label class="form-label" for="c_a">Apellido</label><input class="form-control" id="c_a" name="apellido" required maxlength="60" autocomplete="family-name"><div class="invalid-feedback">Ingresa tu apellido.</div></div>
-        <div class="col-md-6"><label class="form-label" for="c_e">Correo</label><input type="email" class="form-control" id="c_e" name="correo" required maxlength="120" autocomplete="email"><div class="invalid-feedback">Ingresa un correo válido.</div></div>
-        <div class="col-md-6"><label class="form-label" for="c_t">Teléfono de contacto</label><input type="tel" class="form-control" id="c_t" name="telefono" required pattern="[0-9+ ]{8,15}" maxlength="15" autocomplete="tel"><div class="invalid-feedback">Ingresa un teléfono válido (solo números).</div></div>
-        <div class="col-12"><label class="form-label" for="c_m">Mensaje</label><textarea class="form-control" id="c_m" name="mensaje" rows="5" required minlength="10" maxlength="2000"></textarea><div class="invalid-feedback">Escribe tu mensaje (mínimo 10 caracteres).</div></div>
-        <div class="col-md-6"><label class="form-label" for="c_c" id="capQ">Verificación…</label>
-          <div class="input-group"><input class="form-control" id="c_c" name="captcha" required inputmode="numeric" autocomplete="off"><button type="button" class="btn btn-outline-secondary" id="capRefresh" aria-label="Nueva pregunta">↻</button></div>
-          <div class="invalid-feedback">Responde la verificación.</div></div>
-        <div class="col-12"><button class="btn btn-sea btn-lg" id="sendBtn">Enviar mensaje</button></div>
-      </form>
+    <div class="contact-card">
+      <span class="contact-card-label">Teléfono</span>
+      <a class="contact-card-link" href="tel:<?= e(preg_replace('/[^0-9+]/', '', $JUNTA['telefono'])) ?>"><?= e($JUNTA['telefono']) ?></a>
     </div>
+    <button class="btn btn-sea btn-lg contact-open" type="button" data-bs-toggle="modal" data-bs-target="#contactModal">Escríbenos</button>
   </div>
 </div></section>
 
@@ -209,6 +198,38 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
 </footer>
 
 <!-- Modales -->
+<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg contact-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div><span class="section-kicker">Contacto</span><h2 class="h4 mt-1 mb-0" id="contactModalTitle">Escríbenos</h2></div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <form id="contactForm" class="row g-3" novalidate>
+        <input type="hidden" name="csrf" value="<?= csrf() ?>">
+        <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="col-md-6"><label class="form-label" for="c_n">Nombre</label><input class="form-control" id="c_n" name="nombre" required maxlength="60" autocomplete="given-name"><div class="invalid-feedback">Ingresa tu nombre.</div></div>
+        <div class="col-md-6"><label class="form-label" for="c_a">Apellido</label><input class="form-control" id="c_a" name="apellido" required maxlength="60" autocomplete="family-name"><div class="invalid-feedback">Ingresa tu apellido.</div></div>
+        <div class="col-md-6"><label class="form-label" for="c_e">Correo</label><input type="email" class="form-control" id="c_e" name="correo" required maxlength="120" autocomplete="email"><div class="invalid-feedback">Ingresa un correo válido.</div></div>
+        <div class="col-md-6"><label class="form-label" for="c_t">Teléfono de contacto</label><input type="tel" class="form-control" id="c_t" name="telefono" required pattern="[0-9+ ]{8,15}" maxlength="15" autocomplete="tel"><div class="invalid-feedback">Ingresa un teléfono válido (solo números).</div></div>
+        <div class="col-12"><label class="form-label" for="c_m">Mensaje</label><textarea class="form-control" id="c_m" name="mensaje" rows="5" required minlength="10" maxlength="2000"></textarea><div class="invalid-feedback">Escribe tu mensaje (mínimo 10 caracteres).</div></div>
+        <?php if ($RECAPTCHA_ENABLED): ?>
+          <div class="col-12">
+            <div id="recaptchaWidget" class="g-recaptcha" data-sitekey="<?= e($RECAPTCHA['site_key']) ?>" data-size="compact" data-callback="brisasRecaptchaVerified"></div>
+            <p class="small text-danger mt-2 d-none" id="captchaError" role="alert">Completa la verificación reCAPTCHA.</p>
+          </div>
+        <?php else: ?>
+          <div class="col-md-6"><label class="form-label" for="c_c" id="capQ">Verificación…</label>
+            <div class="input-group"><input class="form-control" id="c_c" name="captcha" required inputmode="numeric" autocomplete="off"><button type="button" class="btn btn-outline-secondary" id="capRefresh" aria-label="Nueva pregunta">↻</button></div>
+            <div class="invalid-feedback">Responde la verificación.</div></div>
+        <?php endif; ?>
+          <div class="col-12"><button type="submit" class="btn btn-sea btn-lg" id="sendBtn">Enviar mensaje</button></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="modal fade" id="zoomModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content bg-transparent border-0">
   <button class="btn-close btn-close-white ms-auto mb-2" data-bs-dismiss="modal" aria-label="Cerrar"></button><img id="zoomImg" class="img-fluid rounded" alt=""></div></div></div>
 <div class="modal fade" id="newsModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg"><div class="modal-content">
@@ -218,6 +239,7 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
   <div class="modal-header"><h3 class="h5 mb-0" id="msgTitle"></h3><button class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
   <div class="modal-body" id="msgBody"></div><div class="modal-footer"><button class="btn btn-sea" data-bs-dismiss="modal">Entendido</button></div></div></div></div>
 
+<?php if ($RECAPTCHA_ENABLED): ?><script src="https://www.google.com/recaptcha/api.js?hl=es" async defer></script><?php endif; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/assets/js/main.js?v=<?= filemtime(__DIR__.'/assets/js/main.js') ?>"></script>
 </body></html>

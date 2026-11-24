@@ -1,2 +1,3 @@
 # ftp-sync credentials
 .vscode/ftp-sync.json
+includes/recaptcha.local.php

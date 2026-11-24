@@ -260,17 +260,25 @@ section[id],header[id]{scroll-margin-top:82px}
 .gallery img{transition:transform .55s cubic-bezier(.2,.7,.2,1),filter .4s ease}
 .gallery img:hover{transform:scale(1.035);filter:saturate(1.08)}
 .price{border:1px solid rgba(var(--sea-rgb),.1)}
-#contacto .col-lg-4 p{
-  position:relative;margin:0 0 .85rem;padding:1rem 1.1rem 1rem 1.2rem;
-  border:1px solid var(--border);border-radius:.9rem;background:var(--surface);
-  box-shadow:var(--shadow-sm);color:var(--muted);overflow-wrap:anywhere;
-  transition:transform .25s ease,border-color .25s ease
+.contact-panel{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;max-width:900px;margin:auto;
+  padding:clamp(1rem,3vw,2rem);border:1px solid var(--border);border-radius:1.2rem;
+  background:var(--surface);box-shadow:var(--shadow-md)
 }
-#contacto .col-lg-4 p:hover{transform:translateX(4px);border-color:rgba(var(--sea-rgb),.35)}
-#contacto .col-lg-4 strong{display:block;color:var(--sea);font-size:.77rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.22rem}
+.contact-card{
+  min-width:0;padding:1.15rem 1.3rem;border:1px solid var(--border);border-radius:.9rem;
+  background:var(--surface-alt);transition:transform .25s ease,border-color .25s ease
+}
+.contact-card:hover{transform:translateY(-2px);border-color:rgba(var(--sea-rgb),.35)}
+.contact-card-label{display:block;margin-bottom:.25rem;color:var(--muted);font-size:.77rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.contact-card-link{display:block;color:var(--sea);font-size:clamp(1rem,2vw,1.15rem);font-weight:700;overflow-wrap:anywhere;text-decoration:none}
+.contact-card-link:hover{color:var(--sun-d)}
+.contact-open{grid-column:1/-1;justify-self:center;min-width:210px}
+.section-kicker{color:var(--sun-d);font-size:.75rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.contact-modal .modal-content{background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(20px)}
+.contact-modal .modal-body{padding:clamp(1.1rem,3vw,2rem)}
 #contactForm{
-  padding:clamp(1.1rem,3vw,2rem);border:1px solid var(--border);
-  border-radius:1.2rem;background:var(--surface);box-shadow:var(--shadow-md)
+  padding:0;border:0;border-radius:0;background:transparent;box-shadow:none
 }
 .form-control,.form-select{transition:border-color .22s ease,box-shadow .22s ease,background .22s ease}
 .form-control:focus,.form-select:focus{box-shadow:0 0 0 .22rem rgba(var(--sea-rgb),.16)}
@@ -281,7 +289,8 @@ section[id],header[id]{scroll-margin-top:82px}
 @media (max-width:767.98px){
   section[id],header[id]{scroll-margin-top:70px}
   .hero-over{padding-top:2.5rem}
-  #contacto .col-lg-4 p{margin-bottom:.65rem}
+  .contact-panel{grid-template-columns:1fr}
+  .contact-open{grid-column:auto;width:100%}
   .footer-bottom{flex-direction:column;gap:.35rem}
 }
 @media (min-width:992px){

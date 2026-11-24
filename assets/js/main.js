@@ -88,13 +88,42 @@ $('#newsModal').addEventListener('hidden.bs.modal', () => $('#nmMedia').innerHTM
 
 /* ---- Contacto: validación, captcha y envío ---- */
 const f = $('#contactForm'), mm = new bootstrap.Modal('#msgModal');
-const msg = (t, b) => { $('#msgTitle').textContent = t; $('#msgBody').textContent = b; mm.show(); };
+const contactModalEl = $('#contactModal'), contactModal = bootstrap.Modal.getOrCreateInstance(contactModalEl);
+const recaptchaWidget = $('#recaptchaWidget'), captchaError = $('#captchaError');
+const msg = (t, b) => {
+  const showMessage = () => { $('#msgTitle').textContent = t; $('#msgBody').textContent = b; mm.show(); };
+  if (contactModalEl.classList.contains('show')) {
+    contactModalEl.addEventListener('hidden.bs.modal', showMessage, { once:true });
+    contactModal.hide();
+  } else showMessage();
+};
+window.brisasRecaptchaVerified = () => captchaError?.classList.add('d-none');
 async function loadCaptcha() {
-  try { const r = await fetch('/captcha.php', { cache: 'no-store' }); $('#capQ').textContent = (await r.json()).q; $('#c_c').value = ''; } catch (_) { $('#capQ').textContent = 'No se pudo cargar la verificación'; }
+  if (recaptchaWidget) return;
+  try {
+    const r = await fetch('/captcha.php', { cache: 'no-store' });
+    if (!r.ok) throw new Error(`captcha.php respondió ${r.status}`);
+    const data = await r.json();
+    if (typeof data.q !== 'string') throw new Error('captcha.php no devolvió la pregunta.');
+    $('#capQ').textContent = data.q; $('#c_c').value = '';
+  } catch (error) {
+    console.error('No se pudo cargar la verificación del formulario.', error);
+    $('#capQ').textContent = 'No se pudo cargar la verificación';
+  }
 }
-loadCaptcha(); $('#capRefresh').addEventListener('click', loadCaptcha);
+function resetCaptcha() {
+  if (recaptchaWidget) {
+    window.grecaptcha?.reset?.();
+    captchaError?.classList.add('d-none');
+  } else loadCaptcha();
+}
+loadCaptcha(); $('#capRefresh')?.addEventListener('click', loadCaptcha);
 f.addEventListener('submit', async e => {
   e.preventDefault(); f.classList.add('was-validated');
+  if (recaptchaWidget && !window.grecaptcha?.getResponse?.()) {
+    captchaError?.classList.remove('d-none');
+    return;
+  }
   if (!f.checkValidity()) return;
   const btn = $('#sendBtn'); btn.disabled = true; btn.textContent = 'Enviando…';
   try {
@@ -102,6 +131,6 @@ f.addEventListener('submit', async e => {
     if (j.ok) { msg('Mensaje enviado', j.msg); f.reset(); f.classList.remove('was-validated'); }
     else msg('No se pudo enviar', j.msg || 'Inténtalo nuevamente.');
   } catch (_) { msg('Sin conexión', 'No se pudo enviar el mensaje. Revisa tu conexión.'); }
-  btn.disabled = false; btn.textContent = 'Enviar mensaje'; loadCaptcha();
+  btn.disabled = false; btn.textContent = 'Enviar mensaje'; resetCaptcha();
 });
 })();

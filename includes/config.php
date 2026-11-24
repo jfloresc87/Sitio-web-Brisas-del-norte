@@ -31,6 +31,27 @@ $JUNTA = [
   ],
 ];
 
+// Las claves de Google se guardan en un archivo local ignorado por Git.
+$RECAPTCHA = ['site_key'=>'', 'secret_key'=>''];
+$recaptchaConfig = __DIR__.'/recaptcha.local.php';
+if (is_file($recaptchaConfig)) {
+  $localRecaptcha = require $recaptchaConfig;
+  if (!is_array($localRecaptcha)
+      || !isset($localRecaptcha['site_key'], $localRecaptcha['secret_key'])
+      || !is_string($localRecaptcha['site_key'])
+      || !is_string($localRecaptcha['secret_key'])) {
+    throw new RuntimeException('La configuración local de reCAPTCHA debe incluir site_key y secret_key como texto.');
+  }
+  $RECAPTCHA = [
+    'site_key'=>trim($localRecaptcha['site_key']),
+    'secret_key'=>trim($localRecaptcha['secret_key']),
+  ];
+  if (($RECAPTCHA['site_key'] === '') !== ($RECAPTCHA['secret_key'] === '')) {
+    throw new RuntimeException('Configura ambas claves de reCAPTCHA o elimina includes/recaptcha.local.php.');
+  }
+}
+$RECAPTCHA_ENABLED = $RECAPTCHA['site_key'] !== '';
+
 // ---- Carrusel de Inicio: archivos dentro de la carpeta /inicio --------
 $CARRUSEL = [
   'foto1.jpg',   // <-- EDITAR: agrega o quita líneas con los nombres de tus fotos
