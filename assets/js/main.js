@@ -28,6 +28,13 @@ $$('.reveal').forEach(el => revealObserver ? revealObserver.observe(el) : el.cla
 
 const sections = $$('section[id], header[id]');
 const navLinks = $$('.mainnav .nav-link');
+const navCollapse = $('#nv');
+navLinks.forEach(link => {
+  if (!link.getAttribute('href')?.startsWith('#')) return;
+  link.addEventListener('click', () => {
+    if (navCollapse?.classList.contains('show')) bootstrap.Collapse.getOrCreateInstance(navCollapse).hide();
+  });
+});
 if ('IntersectionObserver' in window) {
   const navObserver = new IntersectionObserver(entries => entries.forEach(entry => {
     if (!entry.isIntersecting) return;

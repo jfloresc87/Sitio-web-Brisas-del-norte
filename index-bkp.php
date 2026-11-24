@@ -38,7 +38,7 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
     <div id="nv" class="collapse navbar-collapse justify-content-end">
       <ul class="navbar-nav">
         <?php foreach (['inicio'=>'Inicio','directiva'=>'Directiva','noticias'=>'Noticias','servicios'=>'Servicios','contacto'=>'Contacto'] as $k=>$v): ?>
-        <li class="nav-item"><a class="nav-link" href="#<?= $k ?>" data-bs-toggle="collapse" data-bs-target=".navbar-collapse.show"><?= $v ?></a></li>
+        <li class="nav-item"><a class="nav-link" href="#<?= $k ?>"><?= $v ?></a></li>
         <?php endforeach; ?>
         <li class="nav-item nav-admin"><a class="nav-link" href="/admin/login.php">Administración <span aria-hidden="true">↗</span></a></li>
       </ul>
