@@ -98,6 +98,8 @@ const serviceModalElement = $('#serviceModal');
 if (serviceModalElement) {
   const serviceModal = new bootstrap.Modal(serviceModalElement);
   const serviceGallery = $('#serviceModalGallery');
+  const galleryControls = $('#serviceGalleryControls');
+  const galleryCounter = $('#serviceGalleryCounter');
   const conditionButton = $('#serviceModalConditions');
   const conditionPanel = $('#serviceConditionPanel');
   const conditionImage = $('#serviceConditionImage');
@@ -106,6 +108,22 @@ if (serviceModalElement) {
   const certificateUnavailable = $('#serviceCertificateUnavailable');
   const whatsappButton = $('#serviceModalWhatsapp');
   let activeServiceTrigger = null;
+  let galleryIndex = 0;
+  const goToGallerySlide = index => {
+    const slides = serviceGallery.querySelectorAll('.service-modal-gallery-slide');
+    if (!slides.length) return;
+    galleryIndex = (index + slides.length) % slides.length;
+    serviceGallery.scrollTo({left:galleryIndex * serviceGallery.clientWidth, behavior:'smooth'});
+    galleryCounter.textContent = `${galleryIndex + 1} / ${slides.length}`;
+  };
+  $('#serviceGalleryPrevious').addEventListener('click', () => goToGallerySlide(galleryIndex - 1));
+  $('#serviceGalleryNext').addEventListener('click', () => goToGallerySlide(galleryIndex + 1));
+  serviceGallery.addEventListener('scroll', () => {
+    const slides = serviceGallery.querySelectorAll('.service-modal-gallery-slide');
+    if (!slides.length || !serviceGallery.clientWidth) return;
+    galleryIndex = Math.min(slides.length - 1, Math.round(serviceGallery.scrollLeft / serviceGallery.clientWidth));
+    galleryCounter.textContent = `${galleryIndex + 1} / ${slides.length}`;
+  }, {passive:true});
   $$('[data-service-trigger]').forEach(trigger => trigger.addEventListener('click', () => {
     activeServiceTrigger = trigger;
     $('#serviceModalTitle').textContent = trigger.dataset.title;
@@ -116,6 +134,10 @@ if (serviceModalElement) {
 
     serviceGallery.replaceChildren();
     const conditionOnly = trigger.dataset.conditionOnly === 'true';
+    serviceGallery.classList.toggle('d-none', conditionOnly);
+    galleryControls.classList.add('d-none');
+    galleryIndex = 0;
+    serviceGallery.scrollLeft = 0;
     let photos;
     try {
       photos = JSON.parse(trigger.dataset.gallery || '[]');
@@ -124,18 +146,29 @@ if (serviceModalElement) {
       console.error('No se pudo leer la galería del servicio.', error);
       photos = [];
     }
-    photos.filter(path => typeof path === 'string' && path !== '').forEach((path, index) => {
+    const photoPaths = photos.filter(path => typeof path === 'string' && path !== '');
+    photoPaths.forEach((path, index) => {
+      const slide = document.createElement('div');
+      slide.className = 'service-modal-gallery-slide';
+      slide.setAttribute('role', 'group');
+      slide.setAttribute('aria-roledescription', 'slide');
+      slide.setAttribute('aria-label', `Foto ${index + 1} de ${photoPaths.length}`);
       const image = document.createElement('img');
       image.src = path.startsWith('/') ? path : `/${path}`;
       image.alt = `${trigger.dataset.title}, foto ${index + 1}`;
       image.loading = 'lazy';
-      serviceGallery.append(image);
+      slide.append(image);
+      serviceGallery.append(slide);
     });
-    if (!conditionOnly && !serviceGallery.childElementCount) {
+    if (!conditionOnly && !photoPaths.length) {
       const empty = document.createElement('p');
       empty.className = 'service-gallery-empty';
       empty.textContent = 'Pronto podrás ver aquí las fotos de este espacio.';
       serviceGallery.append(empty);
+    }
+    if (photoPaths.length > 1 && !conditionOnly) {
+      galleryControls.classList.remove('d-none');
+      galleryCounter.textContent = `1 / ${photoPaths.length}`;
     }
 
     const conditionPath = trigger.dataset.condition || '';
@@ -181,6 +214,8 @@ if (serviceModalElement) {
   $('#serviceConditionClose').addEventListener('click', () => conditionPanel.classList.add('d-none'));
   serviceModalElement.addEventListener('hidden.bs.modal', () => {
     serviceGallery.replaceChildren();
+    serviceGallery.classList.remove('d-none');
+    galleryControls.classList.add('d-none');
     conditionImage.removeAttribute('src');
     certificateImage.removeAttribute('src');
     conditionPanel.classList.add('d-none');

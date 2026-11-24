@@ -150,9 +150,12 @@ section{position:relative}
 .svc:hover .svc-open-label{color:var(--sun-d)}
 .gallery{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;background:var(--foam);scrollbar-width:thin}
 .gallery img{flex:0 0 100%;aspect-ratio:16/10;object-fit:cover;scroll-snap-align:center;cursor:zoom-in}
-.service-modal-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:.8rem}
-.service-modal-gallery img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:.75rem}
-.service-gallery-empty{grid-column:1/-1;margin:0;padding:1.25rem;border:1px dashed var(--border);border-radius:.75rem;color:var(--muted);text-align:center}
+.service-gallery-controls{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin:.75rem 0}
+.service-gallery-controls span{color:var(--muted);font-size:.875rem}
+.service-modal-gallery{position:relative;display:flex;width:100%;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:thin;border-radius:.75rem}
+.service-modal-gallery-slide{display:grid;flex:0 0 100%;min-width:0;place-items:center;scroll-snap-align:start}
+.service-modal-gallery img{display:block;width:100%;height:min(62vh,560px);object-fit:contain;background:var(--surface-alt)}
+.service-gallery-empty{flex:0 0 100%;margin:0;padding:1.25rem;border:1px dashed var(--border);border-radius:.75rem;color:var(--muted);text-align:center}
 .service-condition-panel{padding:.8rem;border:1px solid var(--border);border-radius:.85rem;background:var(--surface-alt)}
 .service-condition-panel .btn-close{margin:0 0 .5rem .5rem}
 .service-condition-panel img{display:block;width:auto;max-width:100%;height:auto;max-height:70vh;margin:auto;object-fit:contain}
@@ -357,7 +360,7 @@ section[id],header[id]{scroll-margin-top:82px}
 @media (max-width:991.98px){
   .mainnav{width:calc(100% - 24px);min-height:68px;margin:10px auto -78px;border-radius:20px}
   .mainnav .container{position:relative;flex-wrap:wrap;padding:0 14px}
-  .mainnav .navbar-brand{max-width:calc(100% - 112px);overflow:hidden;text-overflow:ellipsis}
+  .mainnav .navbar-brand{max-width:calc(100% - 112px);overflow:visible;text-overflow:clip;white-space:normal;font-size:.88rem;line-height:1.15}
   .mainnav .navbar-brand img{width:40px;height:40px}
   .nav-tools{gap:.3rem;margin-left:auto}
   .navbar-toggler{display:block}

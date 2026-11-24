@@ -36,7 +36,7 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
 
 <nav class="navbar navbar-expand-lg mainnav">
   <div class="container">
-    <a class="navbar-brand d-flex align-items-center gap-2" href="#inicio"><img src="/<?= e($JUNTA['logo']) ?>" alt="" width="36" height="36"><span><?= e($JUNTA['nombre']) ?></span></a>
+    <a class="navbar-brand d-flex align-items-center gap-2" href="#inicio"><img src="/<?= e($JUNTA['logo']) ?>" alt="" width="36" height="36"><span>Junta de vecinos "Brisas del Norte", UV N° 8, Conchalí, Santiago.</span></a>
     <div class="nav-tools">
       <button class="theme-toggle" id="themeToggle" type="button" aria-label="Cambiar a modo oscuro" title="Cambiar tema">
         <span class="theme-icon theme-icon-sun" aria-hidden="true">☀</span>
@@ -203,6 +203,11 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
       <div class="modal-body">
         <p class="mb-2" id="serviceModalDescription"></p>
         <p class="price d-none mb-3" id="serviceModalPrice"></p>
+        <div class="service-gallery-controls d-none" id="serviceGalleryControls">
+          <button type="button" class="btn btn-outline-sea btn-sm" id="serviceGalleryPrevious" aria-label="Ver imagen anterior">‹ Anterior</button>
+          <span id="serviceGalleryCounter" aria-live="polite"></span>
+          <button type="button" class="btn btn-outline-sea btn-sm" id="serviceGalleryNext" aria-label="Ver imagen siguiente">Siguiente ›</button>
+        </div>
         <div class="service-modal-gallery" id="serviceModalGallery"></div>
         <img class="service-certificate-image d-none" id="serviceCertificateImage" alt="">
         <p class="small text-muted d-none mb-0" id="serviceCertificateUnavailable"></p>
