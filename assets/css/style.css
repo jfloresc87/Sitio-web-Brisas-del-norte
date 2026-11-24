@@ -40,11 +40,12 @@ a{transition:color .22s ease,background .22s ease,border-color .22s ease,transfo
 .mainnav.scrolled{min-height:68px;box-shadow:0 12px 36px rgba(9,53,61,.2)}
 .mainnav .container{min-height:inherit;max-width:100%;padding:0 clamp(16px,3vw,34px)}
 .mainnav .navbar-brand{
-  color:var(--ink);font-size:clamp(1rem,2vw,1.22rem);font-weight:800;letter-spacing:-.045em;
-  white-space:nowrap;transition:color .25s ease,transform .25s ease
+  max-width:40%;min-width:0;margin-right:clamp(.65rem,1.4vw,1.25rem);
+  color:var(--ink);font-size:clamp(.85rem,1.25vw,1.05rem);font-weight:800;line-height:1.15;letter-spacing:-.045em;
+  white-space:normal;transition:color .25s ease,transform .25s ease
 }
 .mainnav .navbar-brand:hover{color:var(--sea);transform:translateY(-1px)}
-.mainnav .navbar-brand img{width:46px;height:46px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,.14))}
+.mainnav .navbar-brand img{flex:0 0 46px;width:46px;height:46px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,.14))}
 .mainnav .navbar-collapse{order:2}
 .mainnav .navbar-nav{align-items:center;gap:.22rem}
 .mainnav .nav-link{
@@ -356,6 +357,11 @@ section[id],header[id]{scroll-margin-top:82px}
 }
 @media (min-width:992px){
   .mainnav .navbar-collapse{display:flex!important;flex-basis:auto;flex-grow:1;justify-content:flex-end}
+}
+@media (min-width:992px) and (max-width:1199.98px){
+  .mainnav .navbar-brand{max-width:38%;margin-right:.5rem;font-size:.82rem}
+  .mainnav .navbar-nav{gap:.05rem}
+  .mainnav .navbar-nav .nav-link{padding:.5rem .48rem!important;font-size:.88rem}
 }
 @media (max-width:991.98px){
   .mainnav{width:calc(100% - 24px);min-height:68px;margin:10px auto -78px;border-radius:20px}
