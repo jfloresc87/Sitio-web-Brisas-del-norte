@@ -4,4 +4,7 @@ RemoveType .php .phtml
 <FilesMatch "\.(php|phtml|php\d|phar)$">
   Require all denied
 </FilesMatch>
+<Files "hero-slides.json">
+  Require all denied
+</Files>
 Options -Indexes -ExecCGI

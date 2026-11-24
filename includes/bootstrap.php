@@ -91,6 +91,57 @@ function save_upload(array $f, string $sub, array $kinds = ['image'], int $maxMB
 function del_file(?string $rel): void {
   if ($rel && str_starts_with($rel, 'uploads/') && !str_contains($rel, '..') && is_file(ROOT.'/'.$rel)) @unlink(ROOT.'/'.$rel);
 }
+function hero_slides(): array {
+  $manifest = ROOT.'/uploads/hero-slides.json';
+  if (!is_file($manifest)) {
+    global $CARRUSEL;
+    return array_values(array_map(
+      static fn($image) => ['image'=>'inicio/'.$image, 'description'=>''],
+      array_filter($CARRUSEL, static fn($image) => is_file(ROOT.'/inicio/'.$image))
+    ));
+  }
+  $contents = file_get_contents($manifest);
+  if ($contents === false) throw new RuntimeException('No se pudo leer la configuración del carrusel de Inicio.');
+  $slides = json_decode($contents, true);
+  if (!is_array($slides) || json_last_error() !== JSON_ERROR_NONE) throw new RuntimeException('La configuración del carrusel de Inicio no es válida.');
+  foreach ($slides as $slide) {
+    if (!is_array($slide)) throw new RuntimeException('Una entrada del carrusel de Inicio no es válida.');
+    $image = $slide['image'] ?? '';
+    if (!is_string($image) || (!str_starts_with($image, 'uploads/hero/') && !str_starts_with($image, 'inicio/'))
+        || str_contains($image, '..') || !is_file(ROOT.'/'.$image)
+        || !is_string($slide['description'] ?? null)) {
+      throw new RuntimeException('Una imagen o descripción del carrusel de Inicio no es válida.');
+    }
+  }
+  return array_values($slides);
+}
+function save_hero_slides(array $slides): void {
+  if (count($slides) > 10) throw new RuntimeException('El carrusel puede tener un máximo de 10 imágenes.');
+  foreach ($slides as &$slide) {
+    $image = $slide['image'] ?? '';
+    if (!is_string($image) || (!str_starts_with($image, 'uploads/hero/') && !str_starts_with($image, 'inicio/'))
+        || str_contains($image, '..') || !is_file(ROOT.'/'.$image)) {
+      throw new RuntimeException('Una imagen del carrusel no es válida.');
+    }
+    $slide = ['image'=>$image, 'description'=>clean((string)($slide['description'] ?? ''), 240)];
+  }
+  unset($slide);
+  $encoded = json_encode($slides, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+  if ($encoded === false) throw new RuntimeException('No se pudo codificar la configuración del carrusel.');
+  $directory = ROOT.'/uploads';
+  if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
+    throw new RuntimeException('No se pudo crear el directorio de carga.');
+  }
+  $temporary = $directory.'/.hero-slides-'.bin2hex(random_bytes(8)).'.tmp';
+  if (file_put_contents($temporary, $encoded, LOCK_EX) === false) {
+    @unlink($temporary);
+    throw new RuntimeException('No se pudo guardar la configuración del carrusel.');
+  }
+  if (!rename($temporary, $directory.'/hero-slides.json')) {
+    @unlink($temporary);
+    throw new RuntimeException('No se pudo actualizar la configuración del carrusel.');
+  }
+}
 /* Reordena $_FILES['campo'][] múltiples */
 function files_list(string $k): array {
   $o = []; if (empty($_FILES[$k]['name'])) return $o;

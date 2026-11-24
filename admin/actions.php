@@ -55,6 +55,41 @@ try {
     if ($r = $q->fetch()) { foreach (json_decode($r['gallery'] ?: '[]', true) ?: [] as $p) del_file($p); del_file($r['cond_image']); $pdo->prepare("DELETE FROM services WHERE id=?")->execute([$id]); }
     flash('Servicio eliminado.'); $back .= 'servicios'; break;
 
+  case 'hero_save':
+    $back = '/admin/index.php?s=inicio';
+    $slides = hero_slides();
+    $remove = array_map('intval', array_filter((array)($_POST['remove_slide'] ?? []), 'is_scalar'));
+    $descriptions = is_array($_POST['descriptions'] ?? null) ? $_POST['descriptions'] : [];
+    $updated = []; $removedFiles = [];
+    foreach ($slides as $index=>$slide) {
+      if (in_array($index, $remove, true)) {
+        if (str_starts_with($slide['image'], 'uploads/hero/')) $removedFiles[] = $slide['image'];
+        continue;
+      }
+      $description = $descriptions[$index] ?? $slide['description'];
+      if (!is_string($description)) throw new Exception('Una descripción del carrusel no es válida.');
+      $updated[] = [
+        'image'=>$slide['image'],
+        'description'=>clean($description, 240),
+      ];
+    }
+    $heroFile = $_FILES['hero_image'] ?? null;
+    if ($heroFile && $heroFile['error'] !== UPLOAD_ERR_NO_FILE) {
+      if (count($updated) >= 10) throw new Exception('El carrusel puede tener un máximo de 10 imágenes.');
+      $description = $_POST['new_description'] ?? '';
+      if (!is_string($description)) throw new Exception('La descripción de la nueva foto no es válida.');
+      $description = clean($description, 240);
+      if ($description === '') throw new Exception('Escribe una descripción para la nueva foto.');
+      $pendingUpload = save_upload($heroFile, 'hero', ['image'], 8);
+      $updated[] = ['image'=>$pendingUpload, 'description'=>$description];
+    }
+    save_hero_slides($updated);
+    $pendingUpload = null;
+    foreach ($removedFiles as $removedFile) {
+      if (!in_array($removedFile, array_column($updated, 'image'), true)) del_file($removedFile);
+    }
+    flash('Carrusel de Inicio actualizado.'); break;
+
   case 'admin_save':
     if (!current_user_is_superuser()) { http_response_code(403); exit('Acceso denegado.'); }
     ensure_admin_profile_schema();
@@ -120,7 +155,8 @@ try {
 } catch (Throwable $x) {
   del_file($pendingUpload);
   flash($x->getMessage(), 'danger');
-  if (str_starts_with($a, 'admin_')) $back = '/admin/index.php?s=administradores';
+  if ($a === 'hero_save') $back = '/admin/index.php?s=inicio';
+  elseif (str_starts_with($a, 'admin_')) $back = '/admin/index.php?s=administradores';
   else $back .= str_starts_with($a, 'svc') ? 'servicios' : 'noticias';
 }
 header('Location: '.$back); exit;

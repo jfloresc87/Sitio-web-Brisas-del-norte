@@ -6,6 +6,7 @@ try {
   $news = db()->query("SELECT * FROM news ORDER BY created_at DESC LIMIT 60")->fetchAll();
   $services = db()->query("SELECT * FROM services ORDER BY sort_order, id")->fetchAll();
 } catch (Throwable $x) { $dbError = true; }
+$heroSlides = hero_slides();
 $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
 ?><!doctype html>
 <html lang="es"><head>
@@ -58,8 +59,8 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
 <!-- ===== INICIO ===== -->
 <header id="inicio" class="hero">
   <div class="slides" aria-hidden="true">
-    <?php foreach ($CARRUSEL as $i => $img): if (!is_file(__DIR__.'/inicio/'.$img)) continue; ?>
-      <div class="slide<?= $i===0?' active':'' ?>" style="background-image:url('/inicio/<?= e(rawurlencode($img)) ?>')"></div>
+    <?php foreach ($heroSlides as $i => $heroSlide): ?>
+      <div class="slide<?= $i===0?' active':'' ?>" data-description="<?= e($heroSlide['description']) ?>" style="background-image:url('/<?= e(str_replace('%2F', '/', rawurlencode($heroSlide['image']))) ?>')"></div>
     <?php endforeach; ?>
   </div>
   <div class="hero-over text-center">
@@ -67,6 +68,7 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
     <img src="/<?= e($JUNTA['logo']) ?>" alt="Logo" class="hero-logo" width="150" height="150">
     <h1><?= e($JUNTA['nombre']) ?></h1>
     <p><?= e($JUNTA['lema']) ?></p>
+    <p class="hero-activity" id="heroActivity"><?= e(($heroSlides[0]['description'] ?? '') ?: 'Conoce las actividades y novedades de nuestra comunidad.') ?></p>
     <a href="#noticias" class="btn btn-sun btn-lg">Ver últimas noticias</a>
   </div>
   <a class="hero-scroll" href="#directiva" aria-label="Ir a la sección Directiva"><span></span></a>
@@ -160,26 +162,9 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
         : 'Hola, quisiera agendar: '.$title;
       $conditionLabel = $serviceKind === 'certificados' ? 'Ver horarios, valor y requisitos' : 'Condiciones de uso';
     ?>
-    <?php if ($serviceKind === 'certificados'): ?>
-    <div class="col-lg-4 reveal"><article class="card h-100 svc">
-      <div class="svc-info-media">
-        <?php if ($conditionReady): ?>
-          <img src="/<?= e($conditionImage) ?>" alt="Horarios, valor y requisitos para certificados de residencia" loading="lazy">
-        <?php else: ?>
-          <span>Sube la ficha a <code>/<?= e($conditionImage) ?></code></span>
-        <?php endif; ?>
-      </div>
-      <div class="svc-card-body">
-        <h3 class="h4"><?= e($title) ?></h3>
-        <?php if ($s['price_text']): ?><span class="price"><?= e($s['price_text']) ?></span><?php endif; ?>
-        <p><?= e($description) ?></p>
-        <?php if ($hasWhatsapp): ?><a class="btn btn-wa mt-auto" target="_blank" rel="noopener noreferrer"
-          href="https://wa.me/<?= e($wa) ?>?text=<?= rawurlencode($whatsappText) ?>">Consultar por WhatsApp</a><?php endif; ?>
-      </div>
-    </article></div>
-    <?php else: ?>
     <div class="col-lg-4 reveal"><article class="card h-100 svc">
       <button type="button" class="svc-trigger" data-service-trigger
+        data-condition-only="<?= $serviceKind === 'certificados' ? 'true' : 'false' ?>"
         data-title="<?= e($title) ?>" data-description="<?= e($description) ?>"
         data-price="<?= e($s['price_text']) ?>" data-gallery="<?= e(json_encode($gallery, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)) ?>"
         data-condition="<?= e($conditionImage) ?>" data-condition-ready="<?= $conditionReady ? 'true' : 'false' ?>"
@@ -187,7 +172,8 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
         data-whatsapp="<?= $hasWhatsapp ? e('https://wa.me/'.$wa.'?text='.rawurlencode($whatsappText)) : '' ?>"
         data-whatsapp-label="<?= e($whatsappLabel) ?>">
         <div class="svc-media">
-          <?php if ($gallery): ?><img src="/<?= e($gallery[0]) ?>" alt="" loading="lazy">
+          <?php if ($serviceKind === 'certificados' && $conditionReady): ?><img src="/<?= e($conditionImage) ?>" alt="Horarios, valor y requisitos para certificados de residencia" loading="lazy">
+          <?php elseif ($gallery): ?><img src="/<?= e($gallery[0]) ?>" alt="" loading="lazy">
           <?php else: ?><span>Fotos próximamente</span><?php endif; ?>
         </div>
         <div class="svc-card-body">
@@ -198,7 +184,6 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
         </div>
       </button>
     </article></div>
-    <?php endif; ?>
     <?php endforeach; ?>
   </div>
 </div></section>
@@ -237,9 +222,9 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
       <a class="contact-card-link" href="mailto:<?= e($JUNTA['email']) ?>"><?= e($JUNTA['email']) ?></a>
     </div>
     <div class="contact-card">
-      <span class="contact-card-label">WhatsApp</span>
+      <span class="contact-card-label">Teléfono (WhatsApp)</span>
       <a class="contact-card-link" target="_blank" rel="noopener noreferrer"
-        href="https://wa.me/<?= e($wa) ?>?text=<?= rawurlencode('Hola necesito consultar sobre') ?>">Escríbenos por WhatsApp</a>
+        href="https://wa.me/<?= e($wa) ?>?text=<?= rawurlencode('Hola necesito consultar sobre') ?>"><?= e($JUNTA['telefono']) ?></a>
     </div>
     <button class="btn btn-sea btn-lg contact-open" type="button" data-bs-toggle="modal" data-bs-target="#contactModal">Escríbenos</button>
   </div>

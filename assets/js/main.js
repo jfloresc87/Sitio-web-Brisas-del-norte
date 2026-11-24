@@ -49,7 +49,16 @@ if ('IntersectionObserver' in window) {
 
 /* ---- Carrusel: cambia cada 6 s con fundido lento (CSS) ---- */
 const sl = $$('.slide');
-if (sl.length > 1) { let i = 0; setInterval(() => { sl[i].classList.remove('active'); i = (i + 1) % sl.length; sl[i].classList.add('active'); }, 6000); }
+if (sl.length > 1) {
+  let i = 0;
+  const heroActivity = $('#heroActivity');
+  setInterval(() => {
+    sl[i].classList.remove('active');
+    i = (i + 1) % sl.length;
+    sl[i].classList.add('active');
+    if (heroActivity) heroActivity.textContent = sl[i].dataset.description || 'Conoce las actividades y novedades de nuestra comunidad.';
+  }, 6000);
+}
 
 /* ---- Zoom de imágenes (directiva, galerías, condiciones) ---- */
 const zoom = new bootstrap.Modal('#zoomModal');
@@ -106,6 +115,7 @@ if (serviceModalElement) {
     price.classList.toggle('d-none', !trigger.dataset.price);
 
     serviceGallery.replaceChildren();
+    const conditionOnly = trigger.dataset.conditionOnly === 'true';
     let photos;
     try {
       photos = JSON.parse(trigger.dataset.gallery || '[]');
@@ -121,7 +131,7 @@ if (serviceModalElement) {
       image.loading = 'lazy';
       serviceGallery.append(image);
     });
-    if (!serviceGallery.childElementCount) {
+    if (!conditionOnly && !serviceGallery.childElementCount) {
       const empty = document.createElement('p');
       empty.className = 'service-gallery-empty';
       empty.textContent = 'Pronto podrás ver aquí las fotos de este espacio.';
@@ -130,11 +140,21 @@ if (serviceModalElement) {
 
     const conditionPath = trigger.dataset.condition || '';
     conditionButton.textContent = trigger.dataset.conditionLabel || 'Condiciones de uso';
-    conditionButton.classList.toggle('d-none', !conditionPath);
-    conditionPanel.classList.add('d-none');
+    conditionButton.classList.toggle('d-none', !conditionPath || conditionOnly);
+    conditionPanel.classList.toggle('d-none', !conditionOnly);
     conditionImage.classList.add('d-none');
     conditionImage.removeAttribute('src');
     conditionUnavailable.classList.add('d-none');
+    if (conditionOnly) {
+      if (trigger.dataset.conditionReady === 'true' && conditionPath) {
+        conditionImage.src = conditionPath.startsWith('/') ? conditionPath : `/${conditionPath}`;
+        conditionImage.alt = trigger.dataset.conditionLabel || trigger.dataset.title;
+        conditionImage.classList.remove('d-none');
+      } else {
+        conditionUnavailable.textContent = `La ficha informativa aún no está disponible. Súbela en: /${conditionPath}`;
+        conditionUnavailable.classList.remove('d-none');
+      }
+    }
 
     const whatsappUrl = trigger.dataset.whatsapp || '';
     whatsappButton.href = whatsappUrl || '#';

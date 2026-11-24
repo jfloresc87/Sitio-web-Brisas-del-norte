@@ -1,6 +1,6 @@
 <?php
 require __DIR__.'/../includes/bootstrap.php'; require_login();
-$s = $_GET['s'] ?? 'noticias'; if (!in_array($s, ['noticias','servicios','comprobantes','administradores'], true)) $s = 'noticias';
+$s = $_GET['s'] ?? 'noticias'; if (!in_array($s, ['inicio','noticias','servicios','comprobantes','administradores'], true)) $s = 'noticias';
 $sub = ($_GET['sub'] ?? 'generar') === 'historial' ? 'historial' : 'generar';
 $pdo = db(); ensure_admin_profile_schema();
 $currentUserStmt = $pdo->prepare("SELECT id,email,name,profile_photo FROM users WHERE id=?");
@@ -32,6 +32,7 @@ $nav = fn($k, $label, $extra = '') => '<a class="nav-link'.($s === $k && !$extra
     </button>
   </div>
   <nav class="nav flex-column gap-1">
+    <?= $nav('inicio', 'Inicio') ?>
     <?= $nav('noticias', 'Noticias') ?><?= $nav('servicios', 'Servicios') ?>
     <?= $superuser ? $nav('administradores', 'Administradores') : '' ?>
     <a class="nav-link<?= $s==='comprobantes' ? ' active' : '' ?>" href="?s=comprobantes&sub=generar">Comprobantes</a>
@@ -51,7 +52,34 @@ $nav = fn($k, $label, $extra = '') => '<a class="nav-link'.($s === $k && !$extra
 </header>
 <?php if ($fl): ?><div class="alert alert-<?= e($fl[1]) ?> alert-dismissible"><?= e($fl[0]) ?><button class="btn-close" data-bs-dismiss="alert"></button></div><?php endif; ?>
 
-<?php /* ================= ADMINISTRADORES ================= */ if ($s === 'administradores'):
+<?php /* ================= INICIO ================= */ if ($s === 'inicio'):
+  $slides = hero_slides(); ?>
+  <h1 class="h3 mb-2">Carrusel de Inicio</h1>
+  <p class="text-muted mb-4">Administra las fotos de fondo y el texto que aparece con cada actividad. Se muestran automáticamente, sin controles visibles.</p>
+  <form method="post" action="actions.php" enctype="multipart/form-data" class="card card-body">
+    <input type="hidden" name="csrf" value="<?= csrf() ?>"><input type="hidden" name="action" value="hero_save">
+    <?php if ($slides): ?><div class="row g-3 mb-4">
+      <?php foreach ($slides as $i=>$slide): ?>
+        <div class="col-md-6"><div class="hero-slide-editor">
+          <img src="/<?= e($slide['image']) ?>" alt="<?= e($slide['description'] ?: 'Foto del carrusel de Inicio') ?>">
+          <label class="form-label mt-3" for="heroDescription<?= $i ?>">Descripción de la actividad</label>
+          <textarea class="form-control" id="heroDescription<?= $i ?>" name="descriptions[<?= $i ?>]" rows="2" maxlength="240" placeholder="Describe brevemente esta actividad"><?= e($slide['description']) ?></textarea>
+          <label class="form-check-label mt-2"><input class="form-check-input" type="checkbox" name="remove_slide[]" value="<?= $i ?>"> Quitar esta foto</label>
+        </div></div>
+      <?php endforeach; ?>
+    </div><?php else: ?><p class="text-muted">Todavía no hay fotos en el carrusel.</p><?php endif; ?>
+    <div class="hero-slide-add">
+      <h2 class="h5">Agregar foto</h2>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-6"><label class="form-label" for="heroImage">Foto (JPG, PNG o WEBP, máximo 8 MB)</label><input id="heroImage" type="file" name="hero_image" class="form-control" accept="image/jpeg,image/png,image/webp" <?= count($slides) >= 10 ? 'disabled' : '' ?>></div>
+        <div class="col-md-6"><label class="form-label" for="heroDescription">Descripción de la actividad</label><input id="heroDescription" name="new_description" class="form-control" maxlength="240" placeholder="Ej.: Jornada de limpieza comunitaria" <?= count($slides) >= 10 ? 'disabled' : '' ?>></div>
+      </div>
+      <p class="form-text text-muted mb-0 mt-2">Recomendado: fotos horizontales 16:9. Máximo 10 imágenes; se guardan en <code>/uploads/hero/</code>.</p>
+    </div>
+    <div class="mt-4"><button class="btn btn-sea btn-lg">Guardar carrusel</button></div>
+  </form>
+
+<?php /* ================= ADMINISTRADORES ================= */ elseif ($s === 'administradores'):
   $edit = $_GET['edit'] ?? ''; $editingAdmin = null;
   if ($edit !== '' && $edit !== 'new') {
     $q = $pdo->prepare("SELECT id,email,name,profile_photo FROM users WHERE id=?");
