@@ -66,6 +66,184 @@ function require_login(): void {
   if (!empty($_SESSION['must_change'])) { header('Location: /admin/cambiar_clave.php'); exit; }
 }
 
+function image_has_animation(string $path, int $type): bool {
+  if (!in_array($type, [IMAGETYPE_PNG, IMAGETYPE_WEBP], true)) return false;
+  $handle = fopen($path, 'rb');
+  if ($handle === false) throw new RuntimeException('No se pudo leer la imagen para optimizarla.');
+  try {
+    if ($type === IMAGETYPE_PNG) {
+      if (fread($handle, 8) !== "\x89PNG\r\n\x1a\n") return false;
+      while (!feof($handle)) {
+        $chunk = fread($handle, 8);
+        if (strlen($chunk) !== 8) break;
+        $length = unpack('N', substr($chunk, 0, 4))[1];
+        $name = substr($chunk, 4, 4);
+        if ($name === 'acTL') return true;
+        if ($name === 'IDAT' || fseek($handle, $length + 4, SEEK_CUR) !== 0) break;
+      }
+      return false;
+    }
+
+    $header = fread($handle, 12);
+    if (strlen($header) !== 12 || substr($header, 0, 4) !== 'RIFF' || substr($header, 8, 4) !== 'WEBP') return false;
+    $remaining = unpack('V', substr($header, 4, 4))[1] - 4;
+    while ($remaining >= 8 && !feof($handle)) {
+      $chunk = fread($handle, 8);
+      if (strlen($chunk) !== 8) break;
+      $length = unpack('V', substr($chunk, 4, 4))[1];
+      $remaining -= 8;
+      if (in_array(substr($chunk, 0, 4), ['ANIM', 'ANMF'], true)) return true;
+      $skip = $length + ($length % 2);
+      if ($skip > $remaining || fseek($handle, $skip, SEEK_CUR) !== 0) break;
+      $remaining -= $skip;
+    }
+    return false;
+  } finally {
+    fclose($handle);
+  }
+}
+
+function optimize_image_file(string $source, string $destination): bool {
+  if (!function_exists('imagecreatefromstring') || !function_exists('imagescale')) {
+    throw new RuntimeException('El servidor necesita la extensión GD de PHP para optimizar imágenes.');
+  }
+  $info = getimagesize($source);
+  if ($info === false) throw new RuntimeException('El archivo de imagen no es válido.');
+  [$width, $height] = $info;
+  $type = $info[2] ?? 0;
+  if (!in_array($type, [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP], true)
+      || ($type === IMAGETYPE_WEBP && !function_exists('imagewebp'))) return false;
+  if (image_has_animation($source, $type)) return false;
+
+  $originalSize = filesize($source);
+  if ($originalSize === false) throw new RuntimeException('No se pudo determinar el tamaño de la imagen.');
+  $contents = file_get_contents($source);
+  if ($contents === false) throw new RuntimeException('No se pudo leer la imagen para optimizarla.');
+  $image = @imagecreatefromstring($contents);
+  unset($contents);
+  if ($image === false) throw new RuntimeException('No se pudo procesar la imagen.');
+
+  try {
+    if ($type === IMAGETYPE_JPEG && function_exists('exif_read_data')) {
+      $metadata = @exif_read_data($source);
+      $orientation = (int)($metadata['Orientation'] ?? 1);
+      $rotate = static function (int $degrees) use (&$image): void {
+        $rotated = imagerotate($image, $degrees, 0);
+        if ($rotated === false) throw new RuntimeException('No se pudo orientar correctamente la imagen.');
+        imagedestroy($image);
+        $image = $rotated;
+      };
+      switch ($orientation) {
+        case 2: imageflip($image, IMG_FLIP_HORIZONTAL); break;
+        case 3: $rotate(180); break;
+        case 4: imageflip($image, IMG_FLIP_VERTICAL); break;
+        case 5: $rotate(90); imageflip($image, IMG_FLIP_HORIZONTAL); break;
+        case 6: $rotate(270); break;
+        case 7: $rotate(270); imageflip($image, IMG_FLIP_HORIZONTAL); break;
+        case 8: $rotate(90); break;
+      }
+      $width = imagesx($image);
+      $height = imagesy($image);
+    }
+
+    $maxDimension = 1600;
+    if (max($width, $height) > $maxDimension) {
+      $scaled = imagescale($image, $width >= $height ? $maxDimension : (int)round($width * $maxDimension / $height));
+      if ($scaled === false) throw new RuntimeException('No se pudo redimensionar la imagen.');
+      imagedestroy($image);
+      $image = $scaled;
+    }
+    imagealphablending($image, false);
+    imagesavealpha($image, true);
+    $saved = match ($type) {
+      IMAGETYPE_JPEG => imagejpeg($image, $destination, 90),
+      IMAGETYPE_PNG => imagepng($image, $destination, 9),
+      IMAGETYPE_WEBP => imagewebp($image, $destination, 90),
+      default => false,
+    };
+  } finally {
+    imagedestroy($image);
+  }
+
+  if (!$saved) {
+    @unlink($destination);
+    throw new RuntimeException('No se pudo guardar la versión optimizada de la imagen.');
+  }
+  $optimizedSize = filesize($destination);
+  if ($optimizedSize === false || $optimizedSize >= $originalSize) {
+    @unlink($destination);
+    return false;
+  }
+  return true;
+}
+
+function image_optimization_candidates(): array {
+  $files = [];
+  foreach (['assets/img', 'inicio', 'directiva', 'uploads'] as $directory) {
+    $root = ROOT.'/'.$directory;
+    if (!is_dir($root)) continue;
+    $iterator = new RecursiveIteratorIterator(
+      new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)
+    );
+    foreach ($iterator as $file) {
+      if (!$file->isFile() || $file->isLink()
+          || !in_array(strtolower($file->getExtension()), ['jpg', 'jpeg', 'png', 'webp'], true)) continue;
+      $files[] = $file->getPathname();
+    }
+  }
+  sort($files, SORT_STRING);
+  return $files;
+}
+
+function optimize_existing_images(int $offset, int $limit = 10): array {
+  if ($offset < 0 || $limit < 1 || $limit > 20) throw new InvalidArgumentException('El lote de optimización no es válido.');
+  $files = image_optimization_candidates();
+  if ($offset > count($files)) throw new InvalidArgumentException('La posición del lote supera la cantidad de imágenes.');
+  $batch = array_slice($files, $offset, $limit);
+  $optimized = 0;
+  $unchanged = 0;
+  $alreadyBackedUp = 0;
+
+  foreach ($batch as $source) {
+    $relative = substr($source, strlen(ROOT) + 1);
+    $backup = ROOT.'/includes/image-originals/'.$relative;
+    if (is_file($backup)) {
+      $alreadyBackedUp++;
+      continue;
+    }
+    $temporary = dirname($source).'/.'.basename($source).'-'.bin2hex(random_bytes(6)).'.tmp';
+    if (!optimize_image_file($source, $temporary)) {
+      $unchanged++;
+      continue;
+    }
+
+    $backupDirectory = dirname($backup);
+    if (!is_dir($backupDirectory) && !mkdir($backupDirectory, 0755, true) && !is_dir($backupDirectory)) {
+      @unlink($temporary);
+      throw new RuntimeException('No se pudo crear la carpeta privada para respaldar las imágenes.');
+    }
+    $backupTemporary = $backup.'.'.bin2hex(random_bytes(6)).'.tmp';
+    if (!copy($source, $backupTemporary) || !rename($backupTemporary, $backup)) {
+      @unlink($temporary);
+      @unlink($backupTemporary);
+      throw new RuntimeException('No se pudo respaldar una imagen original; no se modificó.');
+    }
+    if (!rename($temporary, $source)) {
+      @unlink($temporary);
+      @unlink($backup);
+      throw new RuntimeException('No se pudo reemplazar una imagen respaldada; el original se conservó.');
+    }
+    $optimized++;
+  }
+  return [
+    'total'=>count($files),
+    'next_offset'=>min($offset + count($batch), count($files)),
+    'optimized'=>$optimized,
+    'unchanged'=>$unchanged,
+    'already_backed_up'=>$alreadyBackedUp,
+  ];
+}
+
 /* Sube y valida un archivo (por contenido real, no por extensión). Devuelve ruta relativa. */
 function save_upload(array $f, string $sub, array $kinds = ['image'], int $maxMB = 8): string {
   if ($f['error'] !== UPLOAD_ERR_OK) throw new Exception('No se pudo subir el archivo (revisa que pese menos de '.$maxMB.' MB).');
@@ -77,12 +255,14 @@ function save_upload(array $f, string $sub, array $kinds = ['image'], int $maxMB
   if (!in_array($type, $kinds, true)) throw new Exception('Este campo no acepta ese tipo de archivo.');
   $dir = ROOT."/uploads/$sub"; if (!is_dir($dir)) mkdir($dir, 0755, true);
   $name = bin2hex(random_bytes(8)).'.'.$map[$mime]; $dest = "$dir/$name"; $ok = false;
-  if ($type === 'image' && function_exists('imagescale')) {      // reduce fotos grandes → sitio liviano
-    [$w, $h] = getimagesize($f['tmp_name']); $max = 1600;
-    if (max($w, $h) > $max && ($im = @imagecreatefromstring(file_get_contents($f['tmp_name'])))) {
-      $im = imagescale($im, $w >= $h ? $max : (int)round($w * $max / $h)); imagesavealpha($im, true);
-      $ok = match($map[$mime]) { 'jpg'=>imagejpeg($im,$dest,82), 'png'=>imagepng($im,$dest,7),
-                                  'webp'=>function_exists('imagewebp') && imagewebp($im,$dest,82), default=>false };
+  if ($type === 'image') {
+    $optimized = $dest.'.tmp';
+    if (optimize_image_file($f['tmp_name'], $optimized)) {
+      if (!rename($optimized, $dest)) {
+        @unlink($optimized);
+        throw new Exception('No se pudo guardar la imagen optimizada.');
+      }
+      $ok = true;
     }
   }
   if (!$ok && !move_uploaded_file($f['tmp_name'], $dest)) throw new Exception('No se pudo guardar el archivo.');

@@ -51,11 +51,42 @@ if ('IntersectionObserver' in window) {
 const sl = $$('.slide');
 if (sl.length > 1) {
   let i = 0;
-  setInterval(() => {
+  const pendingSlides = new WeakMap();
+  const loadSlide = slide => {
+    if (!slide.dataset.backgroundImage) return Promise.resolve(true);
+    if (pendingSlides.has(slide)) return pendingSlides.get(slide);
+    const source = slide.dataset.backgroundImage;
+    const loading = new Promise(resolve => {
+      const image = new Image();
+      image.onload = () => {
+        slide.style.backgroundImage = `url(${JSON.stringify(source)})`;
+        delete slide.dataset.backgroundImage;
+        resolve(true);
+      };
+      image.onerror = () => {
+        pendingSlides.delete(slide);
+        console.error('No se pudo cargar una imagen del carrusel de Inicio.', source);
+        resolve(false);
+      };
+      image.src = source;
+    });
+    pendingSlides.set(slide, loading);
+    return loading;
+  };
+  loadSlide(sl[1]);
+  const advanceSlide = async () => {
+    const next = (i + 1) % sl.length;
+    if (!(await loadSlide(sl[next]))) {
+      window.setTimeout(advanceSlide, 6000);
+      return;
+    }
     sl[i].classList.remove('active');
-    i = (i + 1) % sl.length;
+    i = next;
     sl[i].classList.add('active');
-  }, 6000);
+    loadSlide(sl[(i + 1) % sl.length]);
+    window.setTimeout(advanceSlide, 6000);
+  };
+  window.setTimeout(advanceSlide, 6000);
 }
 
 /* ---- Zoom de imágenes (directiva, galerías, condiciones) ---- */
@@ -105,12 +136,60 @@ if (serviceModalElement) {
   const conditionImage = $('#serviceConditionImage');
   const conditionUnavailable = $('#serviceConditionUnavailable');
   const conditionViewport = $('#serviceConditionViewport');
-  const conditionZoomButton = $('#serviceConditionZoom');
   const certificateImage = $('#serviceCertificateImage');
   const certificateUnavailable = $('#serviceCertificateUnavailable');
   const whatsappButton = $('#serviceModalWhatsapp');
   let activeServiceTrigger = null;
   let galleryIndex = 0;
+  let conditionPan = null;
+  let suppressConditionZoom = false;
+  const toggleConditionZoom = () => {
+    const zoomed = conditionImage.classList.toggle('is-zoomed');
+    conditionViewport.classList.toggle('is-zoomed', zoomed);
+    conditionImage.setAttribute('aria-pressed', String(zoomed));
+    conditionImage.setAttribute('aria-label', zoomed ? 'Alejar imagen' : 'Acercar imagen');
+    if (!zoomed) conditionViewport.scrollTo({left:0, top:0, behavior:'smooth'});
+  };
+  conditionImage.addEventListener('click', () => {
+    if (suppressConditionZoom) {
+      suppressConditionZoom = false;
+      return;
+    }
+    toggleConditionZoom();
+  });
+  conditionImage.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    toggleConditionZoom();
+  });
+  conditionViewport.addEventListener('pointerdown', event => {
+    if (event.pointerType !== 'mouse' || event.button !== 0 || !conditionImage.classList.contains('is-zoomed')) return;
+    conditionPan = {
+      x:event.clientX, y:event.clientY,
+      left:conditionViewport.scrollLeft, top:conditionViewport.scrollTop,
+      moved:false,
+    };
+  });
+  window.addEventListener('pointermove', event => {
+    if (!conditionPan) return;
+    const dx = event.clientX - conditionPan.x;
+    const dy = event.clientY - conditionPan.y;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) conditionPan.moved = true;
+    if (!conditionPan.moved) return;
+    conditionViewport.scrollLeft = conditionPan.left - dx;
+    conditionViewport.scrollTop = conditionPan.top - dy;
+    conditionViewport.classList.add('is-dragging');
+    event.preventDefault();
+  });
+  const finishConditionPan = () => {
+    if (!conditionPan) return;
+    suppressConditionZoom = conditionPan.moved;
+    conditionPan = null;
+    conditionViewport.classList.remove('is-dragging');
+    if (suppressConditionZoom) window.setTimeout(() => { suppressConditionZoom = false; }, 0);
+  };
+  window.addEventListener('pointerup', finishConditionPan);
+  window.addEventListener('pointercancel', finishConditionPan);
   const goToGallerySlide = index => {
     const slides = serviceGallery.querySelectorAll('.service-modal-gallery-slide');
     if (!slides.length) return;
@@ -180,11 +259,10 @@ if (serviceModalElement) {
     conditionImage.classList.add('d-none');
     conditionImage.removeAttribute('src');
     conditionImage.classList.remove('is-zoomed');
+    conditionImage.setAttribute('aria-pressed', 'false');
+    conditionImage.setAttribute('aria-label', 'Acercar imagen');
     conditionUnavailable.classList.add('d-none');
     conditionViewport.classList.remove('is-zoomed');
-    conditionZoomButton.disabled = true;
-    conditionZoomButton.textContent = 'Ampliar';
-    conditionZoomButton.setAttribute('aria-pressed', 'false');
     certificateImage.classList.add('d-none');
     certificateImage.removeAttribute('src');
     certificateUnavailable.classList.add('d-none');
@@ -208,10 +286,9 @@ if (serviceModalElement) {
   conditionButton.addEventListener('click', () => {
     conditionPanel.classList.remove('d-none');
     conditionImage.classList.remove('is-zoomed');
+    conditionImage.setAttribute('aria-pressed', 'false');
+    conditionImage.setAttribute('aria-label', 'Acercar imagen');
     conditionViewport.classList.remove('is-zoomed');
-    conditionZoomButton.disabled = activeServiceTrigger?.dataset.conditionReady !== 'true';
-    conditionZoomButton.textContent = 'Ampliar';
-    conditionZoomButton.setAttribute('aria-pressed', 'false');
     if (activeServiceTrigger?.dataset.conditionReady === 'true') {
       const path = activeServiceTrigger.dataset.condition || '';
       conditionImage.src = path.startsWith('/') ? path : `/${path}`;
@@ -224,18 +301,12 @@ if (serviceModalElement) {
     }
     $('#serviceConditionClose').focus();
   });
-  conditionZoomButton.addEventListener('click', () => {
-    const zoomed = conditionImage.classList.toggle('is-zoomed');
-    conditionViewport.classList.toggle('is-zoomed', zoomed);
-    conditionZoomButton.textContent = zoomed ? 'Restablecer zoom' : 'Ampliar';
-    conditionZoomButton.setAttribute('aria-pressed', String(zoomed));
-  });
   $('#serviceConditionClose').addEventListener('click', () => {
     conditionPanel.classList.add('d-none');
     conditionImage.classList.remove('is-zoomed');
+    conditionImage.setAttribute('aria-pressed', 'false');
+    conditionImage.setAttribute('aria-label', 'Acercar imagen');
     conditionViewport.classList.remove('is-zoomed');
-    conditionZoomButton.textContent = 'Ampliar';
-    conditionZoomButton.setAttribute('aria-pressed', 'false');
     conditionButton.focus();
   });
   serviceModalElement.addEventListener('hidden.bs.modal', () => {
@@ -246,10 +317,9 @@ if (serviceModalElement) {
     certificateImage.removeAttribute('src');
     conditionPanel.classList.add('d-none');
     conditionImage.classList.remove('is-zoomed');
+    conditionImage.setAttribute('aria-pressed', 'false');
+    conditionImage.setAttribute('aria-label', 'Acercar imagen');
     conditionViewport.classList.remove('is-zoomed');
-    conditionZoomButton.disabled = true;
-    conditionZoomButton.textContent = 'Ampliar';
-    conditionZoomButton.setAttribute('aria-pressed', 'false');
   });
 }
 

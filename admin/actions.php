@@ -106,6 +106,19 @@ try {
     }
     flash('Directiva actualizada.'); break;
 
+  case 'images_optimize':
+    $back = '/admin/index.php?s=imagenes';
+    $offset = filter_var($_POST['offset'] ?? 0, FILTER_VALIDATE_INT);
+    if ($offset === false || $offset < 0) throw new Exception('La posición del lote no es válida.');
+    $result = optimize_existing_images($offset, 10);
+    $back .= '&offset='.$result['next_offset'];
+    flash(
+      'Lote terminado: '.$result['optimized'].' imágenes optimizadas, '
+      .$result['unchanged'].' sin reducción de peso y '
+      .$result['already_backed_up'].' ya respaldadas.'
+    );
+    break;
+
   case 'admin_save':
     if (!current_user_is_superuser()) { http_response_code(403); exit('Acceso denegado.'); }
     ensure_admin_profile_schema();
@@ -174,6 +187,7 @@ try {
   flash($x->getMessage(), 'danger');
   if ($a === 'hero_save') $back = '/admin/index.php?s=inicio';
   elseif ($a === 'directiva_save') $back = '/admin/index.php?s=directiva';
+  elseif ($a === 'images_optimize') $back = '/admin/index.php?s=imagenes&offset='.(max(0, (int)($_POST['offset'] ?? 0)));
   elseif (str_starts_with($a, 'admin_')) $back = '/admin/index.php?s=administradores';
   else $back .= str_starts_with($a, 'svc') ? 'servicios' : 'noticias';
 }

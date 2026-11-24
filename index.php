@@ -36,7 +36,7 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
 
 <nav class="navbar navbar-expand-lg mainnav">
   <div class="container">
-    <a class="navbar-brand d-flex align-items-center gap-2" href="#inicio"><img src="/<?= e($JUNTA['logo']) ?>" alt="" width="36" height="36"><span>Junta de vecinos "Brisas del Norte", UV N° 8, Conchalí, Santiago.</span></a>
+    <a class="navbar-brand d-flex align-items-center gap-2" href="#inicio"><img src="/<?= e($JUNTA['logo']) ?>" alt="" width="36" height="36"><span>Junta de Vecinos "Brisas del Norte" UV N° 8, Conchalí</span></a>
     <div class="nav-tools">
       <button class="theme-toggle" id="themeToggle" type="button" aria-label="Cambiar a modo oscuro" title="Cambiar tema">
         <span class="theme-icon theme-icon-sun" aria-hidden="true">☀</span>
@@ -61,7 +61,8 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
 <header id="inicio" class="hero">
   <div class="slides" aria-hidden="true">
     <?php foreach ($heroSlides as $i => $heroSlide): ?>
-      <div class="slide<?= $i===0?' active':'' ?>" style="background-image:url('/<?= e(str_replace('%2F', '/', rawurlencode($heroSlide['image']))) ?>')"></div>
+      <?php $slideImage = '/'.str_replace('%2F', '/', rawurlencode($heroSlide['image'])); ?>
+      <div class="slide<?= $i===0?' active':'' ?>" <?php if ($i === 0): ?>style="background-image:url('<?= e($slideImage) ?>')"<?php else: ?>data-background-image="<?= e($slideImage) ?>"<?php endif; ?>></div>
     <?php endforeach; ?>
   </div>
   <div class="hero-over text-center">
@@ -220,12 +221,11 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
         <div class="service-condition-toolbar">
           <strong>Condiciones de uso</strong>
           <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-outline-sea btn-sm" id="serviceConditionZoom" aria-pressed="false" disabled>Ampliar</button>
             <button type="button" class="btn-close" id="serviceConditionClose" aria-label="Volver al servicio"></button>
           </div>
         </div>
         <div class="service-condition-viewport" id="serviceConditionViewport">
-          <img class="d-none" id="serviceConditionImage" alt="">
+          <img class="d-none" id="serviceConditionImage" alt="" role="button" tabindex="0" aria-label="Acercar imagen" aria-pressed="false">
           <p class="small text-muted d-none mb-0" id="serviceConditionUnavailable"></p>
         </div>
       </div>

@@ -10,6 +10,7 @@ Sitio público y panel de administración para la junta de vecinos.
 - Formulario de contacto protegido con reCAPTCHA.
 - Gestión de contenidos y cuentas administrativas.
 - Modo claro y oscuro.
+- Optimización de imágenes al subirlas y para los archivos existentes desde el panel.
 
 ## Requisitos
 
@@ -42,3 +43,10 @@ Sitio público y panel de administración para la junta de vecinos.
 - Usa HTTPS y cuentas de base de datos con privilegios limitados.
 - Conserva copias de seguridad de la base de datos y de los archivos subidos.
 - Actualiza las dependencias y el servidor con regularidad.
+
+## Optimización de imágenes
+
+- Las imágenes nuevas se reducen a un máximo de 1600 px por lado y se re-guardan en alta calidad (JPEG/WEBP calidad 90, PNG sin pérdida). Solo se usa la versión procesada si pesa menos que la original.
+- En el panel, abre **Optimizar imágenes** y procesa los lotes hasta completar la revisión. El proceso incluye `assets/img/`, `inicio/`, `directiva/` y `uploads/`.
+- Antes de reemplazar cualquier archivo existente, se guarda una copia privada bajo `includes/image-originals/`. El acceso web a `includes/` está bloqueado por `.htaccess`.
+- Las imágenes animadas se conservan sin cambios. Las copias originales deben incluirse en las copias de seguridad del servidor.

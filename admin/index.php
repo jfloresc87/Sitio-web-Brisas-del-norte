@@ -1,6 +1,6 @@
 <?php
 require __DIR__.'/../includes/bootstrap.php'; require_login();
-$s = $_GET['s'] ?? 'noticias'; if (!in_array($s, ['inicio','directiva','noticias','servicios','comprobantes','administradores'], true)) $s = 'noticias';
+$s = $_GET['s'] ?? 'noticias'; if (!in_array($s, ['inicio','directiva','noticias','servicios','imagenes','comprobantes','administradores'], true)) $s = 'noticias';
 $sub = ($_GET['sub'] ?? 'generar') === 'historial' ? 'historial' : 'generar';
 $pdo = db(); ensure_admin_profile_schema();
 $currentUserStmt = $pdo->prepare("SELECT id,email,name,profile_photo FROM users WHERE id=?");
@@ -35,6 +35,7 @@ $nav = fn($k, $label, $extra = '') => '<a class="nav-link'.($s === $k && !$extra
     <?= $nav('inicio', 'Inicio') ?>
     <?= $nav('directiva', 'Directiva') ?>
     <?= $nav('noticias', 'Noticias') ?><?= $nav('servicios', 'Servicios') ?>
+    <?= $nav('imagenes', 'Optimizar imágenes') ?>
     <?= $superuser ? $nav('administradores', 'Administradores') : '' ?>
     <a class="nav-link<?= $s==='comprobantes' ? ' active' : '' ?>" href="?s=comprobantes&sub=generar">Comprobantes</a>
     <?php if ($s === 'comprobantes'): ?><div class="sub nav flex-column">
@@ -207,6 +208,31 @@ $nav = fn($k, $label, $extra = '') => '<a class="nav-link'.($s === $k && !$extra
     <form method="post" action="actions.php" class="d-inline" onsubmit="return confirm('¿Eliminar este servicio y sus imágenes?')"><input type="hidden" name="csrf" value="<?= csrf() ?>"><input type="hidden" name="action" value="svc_delete"><input type="hidden" name="id" value="<?= $r['id'] ?>"><button class="btn btn-sm btn-outline-danger">Eliminar</button></form></td></tr>
   <?php endforeach; ?></tbody></table></div></div>
   <?php endif; ?>
+
+<?php /* ================= OPTIMIZACIÓN DE IMÁGENES ================= */ elseif ($s === 'imagenes'):
+  $imageCount = count(image_optimization_candidates());
+  $imageOffset = min($imageCount, max(0, (int)($_GET['offset'] ?? 0)));
+  $imageRemaining = $imageCount - $imageOffset; ?>
+  <h1 class="h3 mb-2">Optimizar imágenes</h1>
+  <p class="text-muted mb-4">Procesa las imágenes existentes en lotes de 10 para no sobrecargar el servidor. Solo se reemplazan cuando la versión optimizada pesa menos; antes se guarda una copia original en una carpeta privada.</p>
+  <div class="card card-body">
+    <p class="mb-2">Progreso: <?= $imageOffset ?> de <?= $imageCount ?> archivos revisados.</p>
+    <div class="progress mb-4" role="progressbar" aria-label="Progreso de optimización" aria-valuenow="<?= $imageCount ? (int)round($imageOffset * 100 / $imageCount) : 100 ?>" aria-valuemin="0" aria-valuemax="100">
+      <div class="progress-bar" style="width:<?= $imageCount ? (int)round($imageOffset * 100 / $imageCount) : 100 ?>%"></div>
+    </div>
+    <?php if ($imageRemaining > 0): ?>
+      <p class="text-muted">Quedan <?= $imageRemaining ?> imágenes por revisar. Cada lote puede tardar según el tamaño de los archivos.</p>
+      <form method="post" action="actions.php">
+        <input type="hidden" name="csrf" value="<?= csrf() ?>">
+        <input type="hidden" name="action" value="images_optimize">
+        <input type="hidden" name="offset" value="<?= $imageOffset ?>">
+        <button class="btn btn-sea">Procesar siguiente lote (10 imágenes)</button>
+      </form>
+    <?php else: ?>
+      <p class="mb-0">Todas las imágenes existentes ya fueron revisadas.</p>
+    <?php endif; ?>
+    <p class="small text-muted mt-3 mb-0">Se revisan imágenes en <code>/assets/img/</code>, <code>/inicio/</code>, <code>/directiva/</code> y <code>/uploads/</code>. Las imágenes animadas se conservan sin cambios.</p>
+  </div>
 
 <?php /* ================= COMPROBANTES ================= */ else: if ($sub === 'historial'):
   $q = trim($_GET['q'] ?? ''); $pg = max(1, (int)($_GET['p'] ?? 1)); $per = 25; $rec = db(DB_REC);
