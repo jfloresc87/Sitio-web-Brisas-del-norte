@@ -119,7 +119,7 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
     </div>
     <?php endforeach; ?>
   </div>
-  <p class="text-center text-muted d-none" id="newsEmpty">No hay noticias en esta categoría todavía.</p>
+  <p class="text-center text-muted d-none mt-4" id="newsEmpty">No hay noticias en esta categoría todavía.</p>
   <?php if (!$news): ?><p class="text-center text-muted">Aún no hay noticias publicadas.</p><?php endif; ?>
   <div class="text-center mt-4"><button class="btn btn-outline-sea d-none" id="newsMore">Ver más noticias</button></div>
   <?php endif; ?>
