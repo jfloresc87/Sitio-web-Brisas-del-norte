@@ -7,6 +7,7 @@ function syncThemeControl() {
   const dark = document.documentElement.dataset.theme === 'dark';
   themeToggle?.setAttribute('aria-label', dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
   themeToggle?.setAttribute('title', dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
+  themeToggle?.setAttribute('aria-pressed', String(dark));
 }
 syncThemeControl();
 themeToggle?.addEventListener('click', () => {

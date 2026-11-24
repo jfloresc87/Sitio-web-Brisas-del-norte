@@ -19,28 +19,28 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
-<link href="/assets/css/style.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="/assets/css/style.css?v=<?= filemtime(__DIR__.'/assets/css/style.css') ?>" rel="stylesheet">
 </head><body>
 
-<div class="topbar"><div class="container d-flex align-items-center justify-content-end gap-3">
-  <a href="/admin/index.php?s=comprobantes">Comprobantes de pago</a>
-  <a href="/admin/login.php">Administración</a>
-  <button class="theme-toggle" id="themeToggle" type="button" aria-label="Cambiar a modo oscuro" title="Cambiar tema">
-    <span class="theme-icon theme-icon-sun" aria-hidden="true">☀</span>
-    <span class="theme-icon theme-icon-moon" aria-hidden="true">☾</span>
-  </button>
-</div></div>
-
-<nav class="navbar navbar-expand-md sticky-top mainnav">
+<nav class="navbar navbar-expand-lg mainnav">
   <div class="container">
     <a class="navbar-brand d-flex align-items-center gap-2" href="#inicio"><img src="/<?= e($JUNTA['logo']) ?>" alt="" width="36" height="36"><span><?= e($JUNTA['nombre']) ?></span></a>
-    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nv" aria-label="Menú"><span class="navbar-toggler-icon"></span></button>
+    <div class="nav-tools">
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Cambiar a modo oscuro" title="Cambiar tema">
+        <span class="theme-icon theme-icon-sun" aria-hidden="true">☀</span>
+        <span class="theme-icon theme-icon-moon" aria-hidden="true">☾</span>
+      </button>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nv" aria-controls="nv" aria-expanded="false" aria-label="Abrir menú">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+    </div>
     <div id="nv" class="collapse navbar-collapse justify-content-end">
       <ul class="navbar-nav">
         <?php foreach (['inicio'=>'Inicio','directiva'=>'Directiva','noticias'=>'Noticias','servicios'=>'Servicios','contacto'=>'Contacto'] as $k=>$v): ?>
         <li class="nav-item"><a class="nav-link" href="#<?= $k ?>" data-bs-toggle="collapse" data-bs-target=".navbar-collapse.show"><?= $v ?></a></li>
         <?php endforeach; ?>
+        <li class="nav-item nav-admin"><a class="nav-link" href="/admin/login.php">Administración <span aria-hidden="true">↗</span></a></li>
       </ul>
     </div>
   </div>
