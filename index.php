@@ -204,6 +204,8 @@ $wa = preg_replace('/\D/', '', $JUNTA['whatsapp']);
         <p class="mb-2" id="serviceModalDescription"></p>
         <p class="price d-none mb-3" id="serviceModalPrice"></p>
         <div class="service-modal-gallery" id="serviceModalGallery"></div>
+        <img class="service-certificate-image d-none" id="serviceCertificateImage" alt="">
+        <p class="small text-muted d-none mb-0" id="serviceCertificateUnavailable"></p>
         <div class="service-condition-panel d-none mt-4" id="serviceConditionPanel">
           <button type="button" class="btn-close float-end" id="serviceConditionClose" aria-label="Cerrar condiciones"></button>
           <img class="img-fluid rounded d-none" id="serviceConditionImage" alt="">

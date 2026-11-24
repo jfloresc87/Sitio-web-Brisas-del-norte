@@ -102,6 +102,8 @@ if (serviceModalElement) {
   const conditionPanel = $('#serviceConditionPanel');
   const conditionImage = $('#serviceConditionImage');
   const conditionUnavailable = $('#serviceConditionUnavailable');
+  const certificateImage = $('#serviceCertificateImage');
+  const certificateUnavailable = $('#serviceCertificateUnavailable');
   const whatsappButton = $('#serviceModalWhatsapp');
   let activeServiceTrigger = null;
   $$('[data-service-trigger]').forEach(trigger => trigger.addEventListener('click', () => {
@@ -139,18 +141,21 @@ if (serviceModalElement) {
     const conditionPath = trigger.dataset.condition || '';
     conditionButton.textContent = trigger.dataset.conditionLabel || 'Condiciones de uso';
     conditionButton.classList.toggle('d-none', !conditionPath || conditionOnly);
-    conditionPanel.classList.toggle('d-none', !conditionOnly);
+    conditionPanel.classList.add('d-none');
     conditionImage.classList.add('d-none');
     conditionImage.removeAttribute('src');
     conditionUnavailable.classList.add('d-none');
+    certificateImage.classList.add('d-none');
+    certificateImage.removeAttribute('src');
+    certificateUnavailable.classList.add('d-none');
     if (conditionOnly) {
       if (trigger.dataset.conditionReady === 'true' && conditionPath) {
-        conditionImage.src = conditionPath.startsWith('/') ? conditionPath : `/${conditionPath}`;
-        conditionImage.alt = trigger.dataset.conditionLabel || trigger.dataset.title;
-        conditionImage.classList.remove('d-none');
+        certificateImage.src = conditionPath.startsWith('/') ? conditionPath : `/${conditionPath}`;
+        certificateImage.alt = trigger.dataset.conditionLabel || trigger.dataset.title;
+        certificateImage.classList.remove('d-none');
       } else {
-        conditionUnavailable.textContent = `La ficha informativa aún no está disponible. Súbela en: /${conditionPath}`;
-        conditionUnavailable.classList.remove('d-none');
+        certificateUnavailable.textContent = `La ficha informativa aún no está disponible. Súbela en: /${conditionPath}`;
+        certificateUnavailable.classList.remove('d-none');
       }
     }
 
@@ -177,6 +182,7 @@ if (serviceModalElement) {
   serviceModalElement.addEventListener('hidden.bs.modal', () => {
     serviceGallery.replaceChildren();
     conditionImage.removeAttribute('src');
+    certificateImage.removeAttribute('src');
     conditionPanel.classList.add('d-none');
   });
 }
