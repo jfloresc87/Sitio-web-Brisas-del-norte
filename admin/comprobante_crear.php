@@ -37,6 +37,6 @@ if ($concept === 'Arriendo de Cancha') {
 if ($amount < 1 || $amount > 20000000) bad('Ingresa un valor válido.');
 
 $st = db(DB_REC)->prepare("INSERT INTO receipts(concept,name,lastname,phone,rut,other_concept,hour_start,hour_qty,method,special,amount,event_date,issued_at,issued_by)
-                           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NOW(),?)");
-$st->execute([$concept,$name,$last,$phone,$rut,$other,$hs,$hq,$method,$special,$amount,$date,$_SESSION['email']]);
+                           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+$st->execute([$concept,$name,$last,$phone,$rut,$other,$hs,$hq,$method,$special,$amount,$date,date('Y-m-d H:i:s'),$_SESSION['email']]);
 jout(['ok'=>true,'id'=>(int)db(DB_REC)->lastInsertId()]);
