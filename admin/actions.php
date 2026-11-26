@@ -164,7 +164,15 @@ try {
       $pdo->prepare("INSERT INTO users(email,name,profile_photo,pass_hash,must_change) VALUES(?,?,?,?,1)")
           ->execute([$email,$name,$photo,password_hash($password,PASSWORD_DEFAULT)]);
       $pendingUpload = null;
-      flash('Administrador creado. Deberá cambiar su clave al iniciar sesión.');
+      $mailSent = send_mail($email, 'Acceso de administrador – '.$JUNTA['nombre'],
+        "Hola $name,\n\nSe creó una cuenta de administrador para el sitio ".$JUNTA['nombre'].".\n"
+        ."Correo de ingreso: $email\nEnlace de ingreso: ".BASE_URL."/admin/login.php\n\n"
+        ."La clave inicial no se incluye en este correo. Solicítala a la persona que creó tu cuenta. "
+        ."Al ingresar, el sistema te pedirá cambiarla.\n");
+      flash($mailSent
+        ? 'Administrador creado. Se envió un correo con el enlace de ingreso; la clave debe compartirse por otro canal.'
+        : 'Administrador creado, pero no se pudo enviar el correo de aviso. Comparte el enlace de ingreso y la clave por un canal seguro.',
+        $mailSent ? 'success' : 'warning');
     }
     $back = '/admin/index.php?s=administradores'; break;
 
@@ -188,7 +196,17 @@ try {
   if ($a === 'hero_save') $back = '/admin/index.php?s=inicio';
   elseif ($a === 'directiva_save') $back = '/admin/index.php?s=directiva';
   elseif ($a === 'images_optimize') $back = '/admin/index.php?s=imagenes&offset='.(max(0, (int)($_POST['offset'] ?? 0)));
-  elseif (str_starts_with($a, 'admin_')) $back = '/admin/index.php?s=administradores';
+  elseif (str_starts_with($a, 'admin_')) {
+    if ($a === 'admin_save' && (int)($_POST['id'] ?? 0) === 0) {
+      $_SESSION['admin_form'] = [
+        'name' => is_string($_POST['name'] ?? null) ? clean($_POST['name'], 120) : '',
+        'email' => is_string($_POST['email'] ?? null) ? clean($_POST['email'], 190) : '',
+      ];
+      $back = '/admin/index.php?s=administradores&edit=new';
+    } else {
+      $back = '/admin/index.php?s=administradores';
+    }
+  }
   else $back .= str_starts_with($a, 'svc') ? 'servicios' : 'noticias';
 }
 header('Location: '.$back); exit;

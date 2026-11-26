@@ -10,6 +10,8 @@ $_SESSION['email'] = $currentUser['email']; $_SESSION['name'] = $currentUser['na
 $superuser = is_superuser($currentUser['email']);
 if ($s === 'administradores' && !$superuser) { http_response_code(403); exit('Acceso denegado.'); }
 $fl = flash();
+$adminForm = is_array($_SESSION['admin_form'] ?? null) ? $_SESSION['admin_form'] : [];
+unset($_SESSION['admin_form']);
 $nav = fn($k, $label, $extra = '') => '<a class="nav-link'.($s === $k && !$extra ? ' active' : '').'" href="?s='.$k.'">'.$label.'</a>';
 ?><!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
 <title>Panel – <?= e($JUNTA['nombre']) ?></title>
@@ -18,12 +20,17 @@ $nav = fn($k, $label, $extra = '') => '<a class="nav-link'.($s === $k && !$extra
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="/assets/css/style.css?v=<?= filemtime(__DIR__.'/../assets/css/style.css') ?>" rel="stylesheet">
-<style>.side{background:var(--sea-d);min-height:100vh}.side .nav-link{color:rgba(255,255,255,.82);border-radius:.65rem}.side .nav-link.active,.side .nav-link:hover{background:rgba(255,255,255,.14);color:#fff}
-.side .sub .nav-link{padding-left:2rem;font-size:.92rem}.thumb-sm{width:90px;height:60px;object-fit:cover;border-radius:.3rem}.gimg{position:relative;display:inline-block}.gimg img{width:100px;height:70px;object-fit:cover;border-radius:.3rem}</style>
+<style>.side{background:var(--sea-d)!important;color:#fff}.side .nav-link{color:rgba(255,255,255,.82);border-radius:.65rem}.side .nav-link.active,.side .nav-link:hover{background:rgba(255,255,255,.14);color:#fff}
+.side .sub .nav-link{padding-left:2rem;font-size:.92rem}.admin-menu{--bs-offcanvas-width:290px}.admin-menu-toggle{position:fixed;top:16px;left:16px;z-index:1035;display:grid;width:44px;height:44px;place-items:center;border:1px solid rgba(var(--sea-rgb),.24);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-md);color:var(--sea-d)}.admin-menu-toggle:hover{background:var(--foam)}.admin-menu-icon,.admin-menu-icon:before,.admin-menu-icon:after{position:relative;display:block;width:21px;height:2px;border-radius:2px;background:currentColor}.admin-menu-icon:before,.admin-menu-icon:after{position:absolute;left:0;content:""}.admin-menu-icon:before{top:-6px}.admin-menu-icon:after{top:6px}.admin-dashboard .admin-topbar{padding-left:60px}.thumb-sm{width:90px;height:60px;object-fit:cover;border-radius:.3rem}.gimg{position:relative;display:inline-block}.gimg img{width:100px;height:70px;object-fit:cover;border-radius:.3rem}</style>
 </head><body class="bg-light admin-dashboard">
-<div class="container-fluid"><div class="row">
-<aside class="col-md-3 col-lg-2 side p-3">
-  <div class="d-flex align-items-center gap-2 mb-3 text-white"><img src="/<?= e($JUNTA['logo']) ?>" width="38" height="38" alt=""><strong class="small"><?= e($JUNTA['nombre']) ?></strong></div>
+<div class="container-fluid">
+<button class="admin-menu-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#adminMenu" aria-controls="adminMenu" aria-label="Abrir menú de administración"><span class="admin-menu-icon" aria-hidden="true"></span></button>
+<aside class="offcanvas offcanvas-start side admin-menu" tabindex="-1" id="adminMenu" aria-labelledby="adminMenuLabel">
+  <div class="offcanvas-header">
+    <div class="d-flex align-items-center gap-2 text-white"><img src="/<?= e($JUNTA['logo']) ?>" width="38" height="38" alt=""><strong class="small" id="adminMenuLabel"><?= e($JUNTA['nombre']) ?></strong></div>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Cerrar menú"></button>
+  </div>
+  <div class="offcanvas-body p-3">
   <div class="admin-theme-control d-flex align-items-center justify-content-between mb-3">
     <span class="small text-white-50">Apariencia</span>
     <button class="theme-toggle" id="themeToggle" type="button" aria-label="Cambiar a modo oscuro" title="Cambiar tema">
@@ -44,8 +51,9 @@ $nav = fn($k, $label, $extra = '') => '<a class="nav-link'.($s === $k && !$extra
   </nav>
   <hr class="border-light"><div class="small text-white-50 text-break"><?= e($_SESSION['email']) ?></div>
   <a class="nav-link text-white-50 px-0" href="/" target="_blank">Ver sitio</a><a class="nav-link text-white px-0" href="/admin/logout.php">Cerrar sesión</a>
+  </div>
 </aside>
-<main class="col-md-9 col-lg-10 p-3 p-lg-4">
+<main class="admin-main p-3 p-lg-4">
 <header class="admin-topbar">
   <?php if (!empty($currentUser['profile_photo']) && is_file(__DIR__.'/../'.$currentUser['profile_photo'])): ?>
     <img class="admin-avatar" src="/<?= e($currentUser['profile_photo']) ?>" alt="">
@@ -116,10 +124,13 @@ $nav = fn($k, $label, $extra = '') => '<a class="nav-link'.($s === $k && !$extra
     <input type="hidden" name="csrf" value="<?= csrf() ?>"><input type="hidden" name="action" value="admin_save">
     <input type="hidden" name="id" value="<?= (int)($editingAdmin['id'] ?? 0) ?>">
     <div class="row g-3">
-      <div class="col-md-6"><label class="form-label" for="adminName">Nombre</label><input id="adminName" name="name" class="form-control" required maxlength="120" value="<?= e($editingAdmin['name'] ?? '') ?>"></div>
-      <div class="col-md-6"><label class="form-label" for="adminEmail">Correo</label><input id="adminEmail" type="email" name="email" class="form-control" required maxlength="190" value="<?= e($editingAdmin['email'] ?? '') ?>" <?= is_superuser($editingAdmin['email'] ?? '') ? 'readonly' : '' ?>></div>
+      <div class="col-md-6"><label class="form-label" for="adminName">Nombre</label><input id="adminName" name="name" class="form-control" required maxlength="120" value="<?= e($editingAdmin['name'] ?? $adminForm['name'] ?? '') ?>"></div>
+      <div class="col-md-6"><label class="form-label" for="adminEmail">Correo</label><input id="adminEmail" type="email" name="email" class="form-control" required maxlength="190" value="<?= e($editingAdmin['email'] ?? $adminForm['email'] ?? '') ?>" <?= is_superuser($editingAdmin['email'] ?? '') ? 'readonly' : '' ?>></div>
       <div class="col-md-6"><label class="form-label" for="adminPassword"><?= $editingAdmin ? 'Nueva clave (opcional)' : 'Clave inicial' ?></label>
-        <input id="adminPassword" type="password" name="password" class="form-control" <?= $editingAdmin ? '' : 'required' ?> autocomplete="new-password">
+        <div class="input-group">
+          <input id="adminPassword" type="password" name="password" class="form-control" minlength="8" pattern="(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}" title="<?= e(PASS_MSG) ?>" <?= $editingAdmin ? '' : 'required' ?> autocomplete="new-password">
+          <button class="btn btn-outline-secondary" id="adminPasswordToggle" type="button" aria-controls="adminPassword" aria-label="Mostrar clave" aria-pressed="false">Mostrar</button>
+        </div>
         <small class="form-text text-muted"><?= $editingAdmin ? 'Si la cambias, deberá actualizarla al iniciar sesión.' : e(PASS_MSG).' Se solicitará cambiarla al primer ingreso.' ?></small></div>
       <div class="col-md-6"><label class="form-label" for="adminPhoto">Foto de perfil (máx. 5 MB; JPG, PNG o WEBP)</label>
         <input id="adminPhoto" type="file" name="photo" class="form-control" accept="image/jpeg,image/png,image/webp">
@@ -275,13 +286,16 @@ $nav = fn($k, $label, $extra = '') => '<a class="nav-link'.($s === $k && !$extra
   </form>
   <script src="/assets/js/receipt.js"></script>
 <?php endif; endif; ?>
-</main></div></div>
+</main></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 const themeToggle=document.getElementById('themeToggle');
 function syncThemeControl(){const dark=document.documentElement.dataset.theme==='dark';themeToggle.setAttribute('aria-label',dark?'Cambiar a modo claro':'Cambiar a modo oscuro');themeToggle.setAttribute('title',dark?'Cambiar a modo claro':'Cambiar a modo oscuro');themeToggle.setAttribute('aria-pressed',String(dark));}
 syncThemeControl();
 themeToggle.addEventListener('click',()=>{const next=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=next;document.documentElement.dataset.bsTheme=next;syncThemeControl();try{localStorage.setItem('brisas-theme',next)}catch(error){console.warn('No se pudo guardar la preferencia de tema.',error)}});
+const adminPassword=document.getElementById('adminPassword');
+const adminPasswordToggle=document.getElementById('adminPasswordToggle');
+if(adminPassword&&adminPasswordToggle)adminPasswordToggle.addEventListener('click',()=>{const visible=adminPassword.type==='password';adminPassword.type=visible?'text':'password';adminPasswordToggle.textContent=visible?'Ocultar':'Mostrar';adminPasswordToggle.setAttribute('aria-label',visible?'Ocultar clave':'Mostrar clave');adminPasswordToggle.setAttribute('aria-pressed',String(visible))});
 </script>
 <?php if ($s === 'noticias'): ?><script>
 const seo=document.getElementById('seo'),sc=document.getElementById('seoCount'),m=document.getElementById('media');
